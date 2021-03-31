@@ -15,6 +15,7 @@
 
 totalnFrames = 500;
 % load CC:
+cd('D:\IFPEN\IFPEN_manips\expe_2021_03_11\for4DPTV\re01_20spatules\Processed_DATA\zaber_100mm_20spatules_16bit_20210311T153131')
 CCtemp = load('centers_cam1.mat', 'CC');
 CC1 = CCtemp.CC;
 CCtemp = load('centers_cam2.mat', 'CC');
@@ -74,8 +75,8 @@ while(1)
     if x<0
         break
     end
-    xm = [xm,x];
-    ym = [ym,y];
+    xm = [xm,round(x)];
+    ym = [ym,round(y)];
     drawrectangle(gca,'Position',[x-w,y-w,2*w,2*w], ...
             'FaceAlpha',0,'Color','b');
 end
@@ -83,8 +84,12 @@ end
 
 %% ROBUST ESTIMATION PART 01 -  normxcorr2 - we try to match CC1sub in CC2
 %w = 100; % width correlating zone
+c = clock; fprintf('start at %0.2dh%0.2dm\n',c(4),c(5)) 
 filterOrder = 10;
 transformationType = 'affine';
+
+clear xMP yMP % moving points
+xMP = []; yMP = [];
 
 figure
 imshow(20*ACC1)
@@ -95,43 +100,71 @@ drawrectangle(gca,'Position',[xm(i)-w,ym(i)-w,2*w,2*w], ...
 end
 title('Selected rectangles from Cam1')
 
-
 clear xc yc 
-i=1
-xc = xm(i)
-yc = ym(i)
-ACC1sub = zeros(w+1,w+1,'uint8');
-ACC1sub = ACC1(yc-w:yc+w,xc-w:xc+w);
-C = normxcorr2(imgaussfilt(ACC1sub,filterOrder),imgaussfilt(ACC2,filterOrder));
-[ypeak,xpeak] = find(C==max(C(:)));
-yoffSet = ypeak-size(ACC1sub,1);
-xoffSet = xpeak-size(ACC1sub,2);
-movingPoints=[yoffSet xoffSet];
-fixedPoints = [yc xc]; %we take 3 points
-
-
-figure
+hcam02 = figure;
 imshow(20*ACC2)
-drawrectangle(gca,'Position',[xoffSet,yoffSet,size(ACC1sub,2),size(ACC1sub,1)], ...
-'FaceAlpha',0,'Color','r');
-title('Correlated rectangles from Cam1 in Cam2')
-hold on
-for i = 2:length(xm)
-    clear xc yc 
-    xc = xm(i);
+hold on, box on
+%     drawrectangle(gca,'Position',[xoffSet,yoffSet,size(ACC1sub,2),size(ACC1sub,1)], ...
+%         'FaceAlpha',0,'Color','r');
+%     title('Correlated rectangles from Cam1 in Cam2')
+%     hold on
+
+for i = 1 : length(xm)
+    clear xc yc yoffSet xoffSet
+    xc = xm(i); 
     yc = ym(i);
     ACC1sub = zeros(w+1,w+1,'uint8');
     ACC1sub = ACC1(yc-w:yc+w,xc-w:xc+w);
     C = normxcorr2(imgaussfilt(ACC1sub,filterOrder),imgaussfilt(ACC2,filterOrder));
+    % set C to zero above a predefined distance
+    R = 300;
+    x0 = xc+w;
+    y0 = yc+w;
+    x = 1:1302;
+    y = 1:1302;
+    [xx yy] = meshgrid(x,y);
+    C(((xx-x0).^2+(yy-y0).^2) > R^2)=0;
+    %
     [ypeak,xpeak] = find(C==max(C(:)));
     yoffSet = ypeak-size(ACC1sub,1);
     xoffSet = xpeak-size(ACC1sub,2);
-    movingPoints=cat(1,movingPoints,[yoffSet xoffSet]);
-    fixedPoints = cat(1,fixedPoints,[yc xc]); %we take 3 points
     drawrectangle(gca,'Position',[xoffSet,yoffSet,size(ACC1sub,2),size(ACC1sub,1)], ...
-    'FaceAlpha',0,'Color','r');
+        'FaceAlpha',0,'Color','r');
+    xMP = [xMP,xoffSet+w];
+    yMP = [yMP,yoffSet+w];
 end
-
+c = clock; fprintf('done at %0.2dh%0.2dm\n',c(4),c(5)) 
+%%
+clear d dx dy
+for ip = 1 : length(xMP)
+    d(ip)  = ((xm(ip)-xMP(ip))^2 + (ym(ip)-yMP(ip))^2)^(1/2);
+    dx(ip) = -xm(ip)+xMP(ip);
+    dy(ip) = -ym(ip)+yMP(ip);
+end
+figure('defaultAxesFontSize',20);
+histogram(d,[0:50:1000])
+title('d')
+figure('defaultAxesFontSize',20);
+histogram(dx)%,[0:50:1000])
+title('dx')
+figure('defaultAxesFontSize',20);
+histogram(dy)%,[0:50:1000])
+title('dy')
+%% plot hitogram of x and y shift
+hhist = figure('defaultAxesFontSize',20);
+set(gca,'ydir','reverse')
+hold on, box on
+for i = 1 : length(xm)
+    plot([xm(i)],[ym(i)],'o')
+    plot([xm(i),xMP(i)],[ym(i),yMP(i)])
+end
+axis([1 1152 1 1152])
+hquiver = figure('defaultAxesFontSize',20);
+imshow(20*ACC1)
+set(gca,'ydir','reverse')
+hold on, box on
+quiver(xm,ym,xMP-xm,yMP-ym)
+axis([1 1152 1 1152])
 %%
 
 tform = fitgeotrans(double(fixedPoints),double(movingPoints),transformationType);

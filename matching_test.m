@@ -15,6 +15,7 @@
 
 totalnFrames = 500;
 % load CC:
+cd('D:\IFPEN\IFPEN_manips\expe_2021_03_11\for4DPTV\re01_20spatules\Processed_DATA\zaber_100mm_20spatules_16bit_20210311T153131')
 CCtemp = load('centers_cam1.mat', 'CC');
 CC1 = CCtemp.CC;
 CCtemp = load('centers_cam2.mat', 'CC');
@@ -87,8 +88,8 @@ filterOrder = 10;
 clear xc yc 
 %xc = 150;
 %yc = 600;
-xc = xm(2)
-yc = ym(2)
+xc = xm(2);
+yc = ym(2);
 ACC1sub = zeros(w+1,w+1,'uint8');
 ACC1sub = ACC1(yc-w:yc+w,xc-w:xc+w);
 
