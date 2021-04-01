@@ -12,7 +12,7 @@
 % moving points: x- and y-coordinates of control points in the image you 
 % want to transform
 % fixedPoints — x- and y-coordinates of control points in the fixed image
-
+fprintf('test')
 totalnFrames = 500;
 % load CC:
 cd('D:\IFPEN\IFPEN_manips\expe_2021_03_11\for4DPTV\re01_20spatules\Processed_DATA\zaber_100mm_20spatules_16bit_20210311T153131')
