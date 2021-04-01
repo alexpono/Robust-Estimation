@@ -210,6 +210,19 @@ ACC1tformed = imwarp(ACC2,tform, 'OutputView', imref2d( size(ACC1) ));
 
 falseColorOverlay = imfuse( 40*ACC1, 40*ACC1tformed);
 imshow( falseColorOverlay, 'initialMagnification', 'fit');
+
+%%
+figure, hold on, box on
+for it = 1 : 500
+    %pause(.1)
+    inputPoints = [CC2(it).X;CC2(it).Y]';
+    PointsC1 = [CC1(it).X;CC1(it).Y]';
+    [X,Y] = transformPointsForward(tform,inputPoints(:,1),inputPoints(:,2));
+    
+    plot(X,Y,'or')
+    plot(PointsC1(:,1),PointsC1(:,2),'ob')
+    pause(.1)
+end
 %%
 % %% a code that could replace ginput, it finds potential correlation zones by itself
 % close all 
