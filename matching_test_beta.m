@@ -13,6 +13,7 @@
 % want to transform
 % fixedPoints — x- and y-coordinates of control points in the fixed image
 
+% list of functions 
 
 totalnFrames = 500;
 him = 1152;
@@ -23,8 +24,7 @@ CCtemp = load('centers_cam1.mat', 'CC');
 CC1 = CCtemp.CC;
 CCtemp = load('centers_cam2.mat', 'CC');
 CC2 = CCtemp.CC;
-%% ROBUST ESTIMATION PART 01 - 01
-%removing the NaNs for all t
+%% ROBUST ESTIMATION PART 1.1 removing the NaNs for all t
 for it = 1 : 500 
 ikill = [];
 for ip = 1 : size(CC1(it).X,2)
@@ -50,19 +50,19 @@ for it = 1 : totalnFrames
     for ip = 1 : length(CC1(it).X)
         xim1 = round(CC1(it).X(ip));
         yim1 = round(CC1(it).Y(ip));
-        ACC1(yim1,xim1) = ACC1(yim1,xim1) + 100;
+        ACC1(yim1,xim1) = ACC1(yim1,xim1) + 255;
     end
         for ip = 1 : length(CC2(it).X)
         xim2 = round(CC2(it).X(ip));
         yim2 = round(CC2(it).Y(ip));
-        ACC2(yim2,xim2) = ACC1(yim2,xim2) + 100;
+        ACC2(yim2,xim2) = ACC1(yim2,xim2) + 255;
     end
 end
 hcam01 = figure;
-imagesc(ACC1)
+imagesc(20*ACC1)
 title('Camera1')
 hcam02 = figure;
-imagesc(ACC2)
+imagesc(20*ACC2)
 title('Camera2')
 
 %%  ROBUST ESTIMATION PART 1.3 normxcorr2 smaller and smaller windows
@@ -87,7 +87,58 @@ dyPass01 =   yoffSet-ym
 R = (dxPass01^2+dyPass01^2)^(1/2) 
 c = clock; fprintf('finished at %0.2dh%0.2dm\n',c(4),c(5)) 
 
-% second pass
+%% second pass
+
+% cut the image in a lot of small images
+hcam01 = figure;
+imagesc(20*ACC1)%, colormap gray
+title('Camera1'), hold on
+wti = 300; % width template images
+tmpl_IM_tStr = struct(); % structure storing information on template images
+clear nCol nRow
+nCol = wim / wti;
+nLin = him / wti;
+iti = 0;
+for iCol = 1 : nCol
+    for iLin = 1 : nLin
+        iti = iti + 1;
+        clear xc yc
+        xc = round(1 + round(wti/2) + (iCol-1)*wti*nCol/floor(nCol));
+        yc = round(1 + round(wti/2) + (iLin-1)*wti*nLin/floor(nLin));
+        tmpl_IM_tStr(iti).x = xc;
+        tmpl_IM_tStr(iti).y = yc;
+        clear subIm
+        subIm =  ACC1(yc-wti/2:yc+wti/2,xc-wti/2:xc+wti/2);
+        tmpl_IM_tStr(iti).subIm = subIm;
+        tmpl_IM_tStr(iti).meanSubIm = mean(subIm(:));
+        if tmpl_IM_tStr(iti).meanSubIm*(101*101)/255 > 25  && ...
+                (1.5*dxPass01) + xc + wti/2 < wim && ...
+                (1.5*dyPass01) + yc + wti/2 > 0
+            tmpl_IM_tStr(iti).correlable = 1;
+            pcol = 'g';
+        else
+            tmpl_IM_tStr(iti).correlable = 0;
+            pcol = 'b';
+        end
+        figure(hcam01)
+        clear xp yp
+        xp = .5*[-1  1  1 -1 -1]*wti+tmpl_IM_tStr(iti).x;
+        yp = .5*[-1 -1  1  1 -1]*wti+tmpl_IM_tStr(iti).y;
+        patch('xdata',xp,'ydata',yp,'faceColor',pcol,'faceAlpha',.3,'edgeColor','none')
+        %pause(.2)
+        
+        if tmpl_IM_tStr(iti).correlable == 1
+    clear xm ym xoffSet yoffSet
+    xm = tmpl_IM_tStr(iti).x;
+    ym = tmpl_IM_tStr(iti).y;
+    [xoffSet,yoffSet] = imageCorrelation(xm,ym,ACC1,ACC2,round(wti/2),filterOrder);
+    tmpl_IM_tStr(iti).xoffSet = xoffSet;
+    tmpl_IM_tStr(iti).yoffSet = yoffSet;
+    quiver(xm,ym,xoffSet-xm,yoffSet-ym,'b','lineWidth',5)
+        end
+    end
+end
+
 
 %% ROBUST ESTIMATION PART 01 -  normxcorr2 - we try to match CC1sub in CC2
 %w = 100; % width correlating zone
@@ -157,6 +208,18 @@ set(gca,'ydir','reverse')
 hold on, box on
 quiver(xm,ym,xMP-xm,yMP-ym)
 axis([1 1152 1 1152])
+%% quiver
+xm = [tmpl_IM_tStr.x];
+ym = [tmpl_IM_tStr.y];
+xMP = [tmpl_IM_tStr.xoffSet];
+xMP = [tmpl_IM_tStr.yoffSet];
+hquiver = figure('defaultAxesFontSize',20);
+imshow(20*ACC1)
+set(gca,'ydir','reverse')
+hold on, box on
+quiver(xm,ym,xMP-xm,yMP-ym)
+axis([1 1152 1 1152])
+
 %%
 
 tform = fitgeotrans(double(fixedPoints),double(movingPoints),transformationType);
@@ -202,7 +265,6 @@ ACC1tformed = imwarp(ACC2,tform, 'OutputView', imref2d( size(ACC1) ));
 falseColorOverlay = imfuse( 40*ACC1, 40*ACC1tformed);
 imshow( falseColorOverlay, 'initialMagnification', 'fit');
 
-<<<<<<< HEAD
 %%
 figure, hold on, box on
 for it = 1 : 500
@@ -215,7 +277,6 @@ for it = 1 : 500
     plot(PointsC1(:,1),PointsC1(:,2),'ob')
     pause(.1)
 end
-=======
 %% OLD Stuff %%
 
 
@@ -240,7 +301,6 @@ while(1)
 end
 
 
->>>>>>> 28e2165535b8b1782ee8191c1eb079153ba4029a
 %%
 % %% a code that could replace ginput, it finds potential correlation zones by itself
 % close all 
@@ -285,13 +345,13 @@ function [xoffSet,yoffSet] = imageCorrelation(xc,yc,ACC1,ACC2,w,filterOrder)
     
 
     % set C to zero above a predefined distance
-%     R = 300;
-%     x0 = xc+w;
-%     y0 = yc+w;
-%     x = 1:1302;
-%     y = 1:1302;
-%     [xx,yy] = meshgrid(x,y);
-%     C(((xx-x0).^2+(yy-y0).^2) > R^2)=0;
+    R = 300;
+    x0 = xc+w;
+    y0 = yc+w;
+    x = 1:1302;
+    y = 1:1302;
+    [xx,yy] = meshgrid(x,y);
+    C(((xx-x0).^2+(yy-y0).^2) > R^2)=0;
     %
     [ypeak,xpeak] = find(C==max(C(:)));
     yoffSet = ypeak-size(ACC1sub,1) + w;
