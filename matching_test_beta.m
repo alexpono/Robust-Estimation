@@ -13,15 +13,17 @@
 % want to transform
 % fixedPoints — x- and y-coordinates of control points in the fixed image
 
-fprintf('toto')
+
 totalnFrames = 500;
+him = 1152;
+wim = 1152;
 % load CC:
 % cd('D:\IFPEN\IFPEN_manips\expe_2021_03_11\for4DPTV\re01_20spatules\Processed_DATA\zaber_100mm_20spatules_16bit_20210311T153131')
 CCtemp = load('centers_cam1.mat', 'CC');
 CC1 = CCtemp.CC;
 CCtemp = load('centers_cam2.mat', 'CC');
 CC2 = CCtemp.CC;
-%% ROBUST ESTIMATION PART 01 
+%% ROBUST ESTIMATION PART 01 - 01
 %removing the NaNs for all t
 for it = 1 : 500 
 ikill = [];
@@ -40,10 +42,10 @@ end
 CC2(it).X(ikill) = [];
 CC2(it).Y(ikill) = [];
 end
-%% ROBUST ESTIMATION PART 01 - normxcorr2 - we build the images
+%% ROBUST ESTIMATION PART 1.2 - normxcorr2 - we build the images
 
-ACC1 = zeros(1152,1152,'uint8');
-ACC2 = zeros(1152,1152,'uint8');
+ACC1 = zeros(him,wim,'uint8');
+ACC2 = zeros(him,wim,'uint8');
 for it = 1 : totalnFrames
     for ip = 1 : length(CC1(it).X)
         xim1 = round(CC1(it).X(ip));
@@ -62,26 +64,6 @@ title('Camera1')
 figure
 imagesc(ACC2)
 title('Camera2')
-%% ROBUST ESTIMATION PART 01 -  select the squares for matching 
-w = 75;
-figure
-imshow(imgaussfilt(255-20*ACC1,1))
-
-% matching coordinates
-xm = [];
-ym = [];
-while(1)
-    clear x y
-    [x,y] = ginput(1);
-    if x<0
-        break
-    end
-    xm = [xm,round(x)];
-    ym = [ym,round(y)];
-    drawrectangle(gca,'Position',[x-w,y-w,2*w,2*w], ...
-            'FaceAlpha',0,'Color','b');
-end
-
 
 %% ROBUST ESTIMATION PART 01 -  normxcorr2 - we try to match CC1sub in CC2
 %w = 100; % width correlating zone
@@ -211,6 +193,7 @@ ACC1tformed = imwarp(ACC2,tform, 'OutputView', imref2d( size(ACC1) ));
 falseColorOverlay = imfuse( 40*ACC1, 40*ACC1tformed);
 imshow( falseColorOverlay, 'initialMagnification', 'fit');
 
+<<<<<<< HEAD
 %%
 figure, hold on, box on
 for it = 1 : 500
@@ -223,6 +206,32 @@ for it = 1 : 500
     plot(PointsC1(:,1),PointsC1(:,2),'ob')
     pause(.1)
 end
+=======
+%% OLD Stuff %%
+
+
+%% ROBUST ESTIMATION PART 1.3 - OLD - ginput select the squares for matching 
+w = 75;
+figure
+imshow(imgaussfilt(255-20*ACC1,1))
+
+% matching coordinates
+xm = [];
+ym = [];
+while(1)
+    clear x y
+    [x,y] = ginput(1);
+    if x<0
+        break
+    end
+    xm = [xm,round(x)];
+    ym = [ym,round(y)];
+    drawrectangle(gca,'Position',[x-w,y-w,2*w,2*w], ...
+            'FaceAlpha',0,'Color','b');
+end
+
+
+>>>>>>> 28e2165535b8b1782ee8191c1eb079153ba4029a
 %%
 % %% a code that could replace ginput, it finds potential correlation zones by itself
 % close all 
