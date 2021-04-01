@@ -58,17 +58,41 @@ for it = 1 : totalnFrames
         ACC2(yim2,xim2) = ACC1(yim2,xim2) + 100;
     end
 end
-figure
+hcam01 = figure;
 imagesc(ACC1)
 title('Camera1')
-figure
+hcam02 = figure;
 imagesc(ACC2)
 title('Camera2')
+
+%%  ROBUST ESTIMATION PART 1.3 normxcorr2 smaller and smaller windows
+% xm,ym : fixed points in camera 1
+c = clock; fprintf('start at %0.2dh%0.2dm\n',c(4),c(5)) 
+filterOrder = 10;
+
+% first pass
+xm = round(wim/2);
+ym = round(him/2);
+wsub = 0.5*mean(xm,ym); % width correlation template image
+[xoffSet,yoffSet] = imageCorrelation(xm,ym,ACC1,ACC2,wsub,filterOrder);
+
+figure(hcam01), hold on
+drawrectangle(gca,'Position',[xm-wsub,ym-wsub,2*wsub,2*wsub], ...
+        'FaceAlpha',0,'Color','b');
+figure(hcam02), hold on
+drawrectangle(gca,'Position',[xoffSet-wsub,yoffSet-wsub,2*wsub,2*wsub], ...
+        'FaceAlpha',0,'Color','r');
+dxPass01 =   xoffSet-xm
+dyPass01 =   yoffSet-ym
+R = (dxPass01^2+dyPass01^2)^(1/2) 
+c = clock; fprintf('finished at %0.2dh%0.2dm\n',c(4),c(5)) 
+
+% second pass
 
 %% ROBUST ESTIMATION PART 01 -  normxcorr2 - we try to match CC1sub in CC2
 %w = 100; % width correlating zone
 c = clock; fprintf('start at %0.2dh%0.2dm\n',c(4),c(5)) 
-filterOrder = 10;
+
 transformationType = 'affine';
 
 clear xMP yMP % moving points
@@ -78,8 +102,10 @@ figure
 imshow(20*ACC1)
 hold on
 for i = 1:length(xm)
-drawrectangle(gca,'Position',[xm(i)-w,ym(i)-w,2*w,2*w], ...
-    'FaceAlpha',0,'Color','b');
+    xc = xm(i);
+    yc = ym(i);
+    drawrectangle(gca,'Position',[xm(i)-w,ym(i)-w,2*w,2*w], ...
+        'FaceAlpha',0,'Color','b');
 end
 title('Selected rectangles from Cam1')
 
@@ -93,24 +119,7 @@ hold on, box on
 %     hold on
 
 for i = 1 : length(xm)
-    clear xc yc yoffSet xoffSet
-    xc = xm(i); 
-    yc = ym(i);
-    ACC1sub = zeros(w+1,w+1,'uint8');
-    ACC1sub = ACC1(yc-w:yc+w,xc-w:xc+w);
-    C = normxcorr2(imgaussfilt(ACC1sub,filterOrder),imgaussfilt(ACC2,filterOrder));
-    % set C to zero above a predefined distance
-    R = 300;
-    x0 = xc+w;
-    y0 = yc+w;
-    x = 1:1302;
-    y = 1:1302;
-    [xx yy] = meshgrid(x,y);
-    C(((xx-x0).^2+(yy-y0).^2) > R^2)=0;
-    %
-    [ypeak,xpeak] = find(C==max(C(:)));
-    yoffSet = ypeak-size(ACC1sub,1);
-    xoffSet = xpeak-size(ACC1sub,2);
+    
     drawrectangle(gca,'Position',[xoffSet,yoffSet,size(ACC1sub,2),size(ACC1sub,1)], ...
         'FaceAlpha',0,'Color','r');
     xMP = [xMP,xoffSet+w];
@@ -251,3 +260,25 @@ end
 % plot(x4corr,y4corr,'sr')
 % figure(h2), hold on
 % plot(x4corr,y4corr,'s')
+
+%% functions
+
+function [xoffSet,yoffSet] = imageCorrelation(xc,yc,ACC1,ACC2,w,filterOrder)
+    ACC1sub = zeros(w+1,w+1,'uint8');
+    ACC1sub = ACC1(yc-w:yc+w,xc-w:xc+w);
+    C = normxcorr2(imgaussfilt(ACC1sub,filterOrder),imgaussfilt(ACC2,filterOrder));
+    
+
+    % set C to zero above a predefined distance
+%     R = 300;
+%     x0 = xc+w;
+%     y0 = yc+w;
+%     x = 1:1302;
+%     y = 1:1302;
+%     [xx,yy] = meshgrid(x,y);
+%     C(((xx-x0).^2+(yy-y0).^2) > R^2)=0;
+    %
+    [ypeak,xpeak] = find(C==max(C(:)));
+    yoffSet = ypeak-size(ACC1sub,1) + w;
+    xoffSet = xpeak-size(ACC1sub,2) + w;
+end
