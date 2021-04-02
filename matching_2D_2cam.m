@@ -194,14 +194,62 @@ imshow( falseColorOverlay, 'initialMagnification', 'fit');
 
 %% ROBUST ESTIMATION PART 2.1 from BLP TRAJECTOIRE 2D
 tic
-maxdist = 2.5;
+for it = 1 : 500
+    part_cam1(it).pos(:,1) = [CC1(it).X]; % out_CAM1(:,1);
+    part_cam1(it).pos(:,2) = [CC1(it).Y]; % out_CAM1(:,2);
+    part_cam1(it).pos(:,3) = ones(length([CC1(it).X]),1)*it;
+    part_cam1(it).intensity = 0; %mI;
+    
+    clear cam2X cam2Y
+    [cam2X,cam2Y] = transformPointsForward(tform1,CC2(it).X,CC2(it).Y);
+    part_cam2(it).pos(:,1) = [cam2X]; % out_CAM1(:,1);
+    part_cam2(it).pos(:,2) = [cam2Y]; % out_CAM1(:,2);
+    part_cam2(it).pos(:,3) = ones(length([cam2X]),1)*it;
+    part_cam2(it).intensity = 0; %mI;
+end
+toc
+%%
+tic
+maxdist = 3;
 longmin = 10;
-[trajArray_CAM0,tracks_CAM0,len0]=TAN_track2d(part_cam0,maxdist,longmin);
-[trajArray_CAM1,tracks_CAM1,len1]=TAN_track2d(part_cam1,maxdist,longmin);
+[trajArray_CAM1,tracks_CAM1]=TAN_track2d(part_cam1,maxdist,longmin);
+
+maxdist = 6;
+[trajArray_CAM2,tracks_CAM2]=TAN_track2d(part_cam2,maxdist,longmin);
 toc
 
+%% show the trajectories
 
+figure('defaultAxesFontSize',20), hold on, box on
 
+for it = 1 : 500
+    clear xpos ypos
+    xpos = [CC1(it).X];
+    ypos = [CC1(it).Y];
+    plot(xpos,ypos,'ob')
+    
+    clear xpos ypos
+    xpos = part_cam2(it).pos(:,1);
+    ypos = part_cam2(it).pos(:,2);
+    plot(xpos,ypos,'or')
+end
+
+for itrj = 1 : length(trajArray_CAM1)
+    % camera 1
+    clear xt yt
+    xt = trajArray_CAM1(itrj).track(:,1);
+    yt = trajArray_CAM1(itrj).track(:,2);
+    plot(xt,yt,'-b','lineWidth',2)
+    
+end
+
+for itrj = 1 : length(trajArray_CAM1)
+    % camera 2
+    clear xt yt
+    xt = trajArray_CAM2(itrj).track(:,1);
+    yt = trajArray_CAM2(itrj).track(:,2);
+    plot(xt,yt,'-r','lineWidth',2)
+end
 %% testing the function
 imageCorrelation(xm,ym,ACC1,ACC2,round(wti/2),filterOrder,'cleanC',dxPass01,dyPass01,R)
 %% functions
