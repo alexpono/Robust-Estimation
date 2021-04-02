@@ -45,7 +45,7 @@ end
 CC2(it).X(ikill) = [];
 CC2(it).Y(ikill) = [];
 end
-%% ROBUST ESTIMATION PART 1.2 - normxcorr2 - we build the images
+%% ROBUST ESTIMATION PART 1.2 normxcorr2 - we build the images
 
 ACC1 = zeros(him,wim,'uint8');
 ACC2 = zeros(him,wim,'uint8');
@@ -192,6 +192,13 @@ imshow( falseColorOverlay, 'initialMagnification', 'fit');
 
 %% ROBUST ESTIMATION PART 2.1 track particles in 2D on each camera
 
+%% ROBUST ESTIMATION PART 2.1 from BLP TRAJECTOIRE 2D
+tic
+maxdist = 2.5;
+longmin = 10;
+[trajArray_CAM0,tracks_CAM0,len0]=TAN_track2d(part_cam0,maxdist,longmin);
+[trajArray_CAM1,tracks_CAM1,len1]=TAN_track2d(part_cam1,maxdist,longmin);
+toc
 
 
 
