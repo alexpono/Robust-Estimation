@@ -16,7 +16,7 @@
 % list of functions 
 
 close all
-clean all
+clear all
 
 totalnFrames = 500;
 him = 1152;
