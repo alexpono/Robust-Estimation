@@ -9,11 +9,11 @@
 % this is the function that will give us the lineal transformation that
 % transforms the points between cameras A and B.
 % variables:
-% moving points: x- and y-coordinates of control points in the image you 
+% moving points: x- and y-coordinates of control points in the image you
 % want to transform
 % fixedPoints — x- and y-coordinates of control points in the fixed image
 
-% list of functions 
+% list of functions
 
 close all
 clear all
@@ -31,22 +31,22 @@ CC2 = CCtemp.CC;
 totalnFrames = size(CC1,2);
 
 %% ROBUST ESTIMATION PART 1.1 removing the NaNs for all t
-for it = 1 : size(CC1,2) 
-ikill = [];
-for ip = 1 : size(CC1(it).X,2)
-    if isnan(CC1(it).X(ip)) || isnan(CC1(it).Y(ip))
-        ikill = [ikill,ip];
+for it = 1 : size(CC1,2)
+    ikill = [];
+    for ip = 1 : size(CC1(it).X,2)
+        if isnan(CC1(it).X(ip)) || isnan(CC1(it).Y(ip))
+            ikill = [ikill,ip];
+        end
     end
-end
-CC1(it).X(ikill) = [];
-CC1(it).Y(ikill) = [];
-for ip = 1 : size(CC2(it).X,2)
-    if isnan(CC2(it).X(ip)) || isnan(CC2(it).Y(ip))
-        ikill = [ikill,ip];
+    CC1(it).X(ikill) = [];
+    CC1(it).Y(ikill) = [];
+    for ip = 1 : size(CC2(it).X,2)
+        if isnan(CC2(it).X(ip)) || isnan(CC2(it).Y(ip))
+            ikill = [ikill,ip];
+        end
     end
-end
-CC2(it).X(ikill) = [];
-CC2(it).Y(ikill) = [];
+    CC2(it).X(ikill) = [];
+    CC2(it).Y(ikill) = [];
 end
 %% ROBUST ESTIMATION PART 1.2 normxcorr2 - we build the images
 
@@ -58,7 +58,7 @@ for it = 1 : totalnFrames
         yim1 = round(CC1(it).Y(ip));
         ACC1(yim1,xim1) = ACC1(yim1,xim1) + 255;
     end
-        for ip = 1 : length(CC2(it).X)
+    for ip = 1 : length(CC2(it).X)
         xim2 = round(CC2(it).X(ip));
         yim2 = round(CC2(it).Y(ip));
         ACC2(yim2,xim2) = ACC1(yim2,xim2) + 255;
@@ -79,7 +79,7 @@ set(gcf,'position',[200+wmon/3 hmon/2-100 wmon/3 hmon/2]);
 
 %  ROBUST ESTIMATION PART 1.3 normxcorr2 pass 01 (on a large window)
 % xm,ym : fixed points in camera 1
-c = clock; fprintf('start at %0.2dh%0.2dm\n',c(4),c(5)) 
+c = clock; fprintf('start at %0.2dh%0.2dm\n',c(4),c(5))
 filterOrder = 10;
 
 % first pass
@@ -90,14 +90,14 @@ wsub = round(0.15*mean(xm,ym)); % width correlation template image
 
 figure(hcam01), hold on
 drawrectangle(gca,'Position',[xm-wsub,ym-wsub,2*wsub,2*wsub], ...
-        'FaceAlpha',0,'Color','b');
+    'FaceAlpha',0,'Color','b');
 figure(hcam02), hold on
 drawrectangle(gca,'Position',[xoffSet-wsub,yoffSet-wsub,2*wsub,2*wsub], ...
-        'FaceAlpha',0,'Color','r');
+    'FaceAlpha',0,'Color','r');
 dxPass01 =   xoffSet-xm;
 dyPass01 =   yoffSet-ym;
 R = (dxPass01^2+dyPass01^2)^(1/2);
-c = clock; fprintf('finished at %0.2dh%0.2dm\n',c(4),c(5)) 
+c = clock; fprintf('finished at %0.2dh%0.2dm\n',c(4),c(5))
 
 sub01 = imcrop(ACC1,[xm-wsub,ym-wsub,2*wsub,2*wsub]);
 hcam01sub = figure;
@@ -157,14 +157,14 @@ for iCol = 1 : nCol
         pause(.2)
         
         if tmpl_IM_tStr(iti).correlable == 1
-    clear xm ym xoffSet yoffSet
-    xm = tmpl_IM_tStr(iti).x;
-    ym = tmpl_IM_tStr(iti).y;
-    [xoffSet,yoffSet] = imageCorrelation(xm,ym,ACC1,ACC2,round(wti/2),filterOrder,'cleanC',dxPass01,dyPass01,150);
-    tmpl_IM_tStr(iti).xoffSet = xoffSet;
-    tmpl_IM_tStr(iti).yoffSet = yoffSet;
-    figure(hcam01)
-    quiver(xm,ym,xoffSet-xm,yoffSet-ym,'r','lineWidth',1)
+            clear xm ym xoffSet yoffSet
+            xm = tmpl_IM_tStr(iti).x;
+            ym = tmpl_IM_tStr(iti).y;
+            [xoffSet,yoffSet] = imageCorrelation(xm,ym,ACC1,ACC2,round(wti/2),filterOrder,'cleanC',dxPass01,dyPass01,150);
+            tmpl_IM_tStr(iti).xoffSet = xoffSet;
+            tmpl_IM_tStr(iti).yoffSet = yoffSet;
+            figure(hcam01)
+            quiver(xm,ym,xoffSet-xm,yoffSet-ym,'r','lineWidth',1)
         end
     end
 end
@@ -204,7 +204,7 @@ imshow( falseColorOverlay, 'initialMagnification', 'fit');
 %     inputPoints = [CC2(it).X;CC2(it).Y]';
 %     PointsC1 = [CC1(it).X;CC1(it).Y]';
 %     [X,Y] = transformPointsForward(tform,inputPoints(:,1),inputPoints(:,2));
-%     
+%
 %     plot(X,Y,'or')
 %     plot(PointsC1(:,1),PointsC1(:,2),'ob')
 %     pause(.1)
@@ -229,7 +229,7 @@ for it = 1 : size(CC1,2)
     part_cam2(it).intensity = 0; %mI;
 end
 toc
-%%
+
 tic
 maxdist = 3;
 longmin = 10;
@@ -238,6 +238,102 @@ longmin = 10;
 maxdist = 6;
 [trajArray_CAM2,tracks_CAM2]=TAN_track2d(part_cam2,maxdist,longmin);
 toc
+
+%% try to associate trajectories:
+c = clock; fprintf('start at %0.2dh%0.2dm\n',c(4),c(5))
+
+figure('defaultAxesFontSize',20), hold on, box on
+structPotentialPairs = struct(); % structure listing potential pairs of trajectories
+ipairs = 0;
+tic
+for itrj01 = 1 : length(trajArray_CAM1)
+    fprintf('progress: %0.4d / %0.4d \n',itrj01,length(trajArray_CAM1))
+    clear xtCAM01 ytCAM01
+    xtCAM01 = trajArray_CAM1(itrj01).track(:,1);
+    ytCAM01 = trajArray_CAM1(itrj01).track(:,2);
+    %axis([min(xtCAM01) max(xtCAM01) min(ytCAM01) max(ytCAM01)])
+    tminCAM01 = min(trajArray_CAM1(itrj01).track(:,3));
+    tmaxCAM01 = max(trajArray_CAM1(itrj01).track(:,3));
+    
+    % for itrj = 1 : length(trajArray_CAM2)
+    %     % camera 2
+    %     clear xt yt
+    %     xt = trajArray_CAM2(itrj).track(:,1);
+    %     yt = trajArray_CAM2(itrj).track(:,2);
+    %     plot(xt,yt,'or','lineWidth',2)
+    % end
+    for itrj = 1 : length(trajArray_CAM2)
+        tminCAM02 = min(trajArray_CAM2(itrj).track(:,3));
+        tmaxCAM02 = max(trajArray_CAM2(itrj).track(:,3));
+        [A,B,C] = intersect([tminCAM01:tmaxCAM01],[tminCAM02:tmaxCAM02]);
+        if A
+            % camera 2
+            clear xt yt
+            xt = trajArray_CAM2(itrj).track(:,1);
+            yt = trajArray_CAM2(itrj).track(:,2);
+            [xA,xB,xC] = intersect([round(min(xtCAM01)):round(max(xtCAM01))],[round(min(xt)):round(max(xt))]);
+            if xA
+                [yA,yB,yC] = intersect([round(min(ytCAM01)):round(max(ytCAM01))],[round(min(yt)):round(max(yt))]);
+                if yA
+                    plot(xtCAM01,ytCAM01,'-b','lineWidth',2)
+                    plot(xt,yt,'-r','lineWidth',2)
+                    ipairs = ipairs + 1;
+                    structPotentialPairs(ipairs).trajCAM01 = itrj01;
+                    structPotentialPairs(ipairs).trajCAM02 = itrj;
+                    structPotentialPairs(ipairs).txA = A;
+                    structPotentialPairs(ipairs).tCAM01 = B;
+                    structPotentialPairs(ipairs).tCAM02 = C;
+                end
+            end
+        end
+    end
+    %axis([min(xtCAM01) max(xtCAM01) min(ytCAM01) max(ytCAM01)])
+end
+toc
+
+for iP = 1 : length(structPotentialPairs)
+    itrj01 = structPotentialPairs(iP).trajCAM01;
+    itrj02 = structPotentialPairs(iP).trajCAM02;
+    it1 = structPotentialPairs(iP).tCAM01(1);
+    it2 = structPotentialPairs(iP).tCAM02(1);
+    
+    
+    clear x01 y01 x02 y02
+    x01 = trajArray_CAM1(itrj01).track(:,1);
+    y01 = trajArray_CAM1(itrj01).track(:,2);
+    x02 = trajArray_CAM2(itrj02).track(:,1);
+    y02 = trajArray_CAM2(itrj02).track(:,2);
+    
+    
+    for it = 1 : length([structPotentialPairs(iP).tCAM01])
+        it1 = structPotentialPairs(iP).tCAM01(it);
+        it2 = structPotentialPairs(iP).tCAM02(it);
+        plot([x01(it1),x02(it2)],[y01(it1),y02(it2)],'-g')
+    end
+end
+
+c = clock; fprintf('done at %0.2dh%0.2dm\n',c(4),c(5))
+%% I give [x,y], it finds the closest track for both cameras
+icam = 2;
+x = 1038;
+y = 558;
+clear d
+for itrj = 1 : length(trajArray_CAM1)
+    clear xt yt
+    if icam == 1
+        xt = trajArray_CAM1(itrj).track(:,1);
+        yt = trajArray_CAM1(itrj).track(:,2);
+    elseif icam == 2
+        xt = trajArray_CAM2(itrj).track(:,1);
+        yt = trajArray_CAM2(itrj).track(:,2);
+    end
+    clear dptraj
+    for ip = 1 : length(xt)
+        dptraj(ip) = ( (x-xt(ip))^2 + (y-yt(ip))^2)^(1/2);
+    end
+    d(itrj) = min(dptraj);
+end
+[~,itrjClosest] = min(d);
 
 %% show the trajectories
 
@@ -264,7 +360,7 @@ for itrj = 1 : length(trajArray_CAM1)
     
 end
 
-for itrj = 1 : length(trajArray_CAM1)
+for itrj = 1 : length(trajArray_CAM2)
     % camera 2
     clear xt yt
     xt = trajArray_CAM2(itrj).track(:,1);
@@ -278,34 +374,34 @@ imageCorrelation(xm,ym,ACC1,ACC2,round(wti/2),filterOrder,'cleanC',dxPass01,dyPa
 
 function [xoffSet,yoffSet] = imageCorrelation(xc,yc,ACC1,ACC2,w,filterOrder,varargin)
 % varargin: ,'cleanC',dxPass01,dyPass01,R);
-    ACC1sub = zeros(w+1,w+1,'uint8');
-    ACC1sub = ACC1(yc-w:yc+w,xc-w:xc+w);
-    C = normxcorr2(imgaussfilt(ACC1sub,filterOrder),imgaussfilt(ACC2,filterOrder));
-    
+ACC1sub = zeros(w+1,w+1,'uint8');
+ACC1sub = ACC1(yc-w:yc+w,xc-w:xc+w);
+C = normxcorr2(imgaussfilt(ACC1sub,filterOrder),imgaussfilt(ACC2,filterOrder));
 
-    % set C to zero above a predefined radius
-    % Checking varargin structure
-    if ( length(varargin) > 1 )
-        fprintf('cleaning C \n')
-        dxPass01 = double(varargin{:,2});
-        dyPass01 = double(varargin{:,3});
-        R = double(varargin{:,4});
-        x0 = round(xc+dxPass01 + size(ACC1sub,1)/2);
-        y0 = round(yc+dyPass01 + size(ACC1sub,2)/2);
-        size(C)
-        x = 1:size(C,2);
-        y = 1:size(C,1);
-        [xx,yy] = meshgrid(x,y);
-        figure
-        imagesc(C)
-        C(((xx-x0).^2+(yy-y0).^2) > R^2)=0;
-        figure
-        imagesc(C)
-    end
 
-    %
-    [ypeak,xpeak] = find(C==max(C(:)));
-    yoffSet = ypeak-size(ACC1sub,1) + w;
-    xoffSet = xpeak-size(ACC1sub,2) + w;
-    size(xoffSet)
+% set C to zero above a predefined radius
+% Checking varargin structure
+if ( length(varargin) > 1 )
+    fprintf('cleaning C \n')
+    dxPass01 = double(varargin{:,2});
+    dyPass01 = double(varargin{:,3});
+    R = double(varargin{:,4});
+    x0 = round(xc+dxPass01 + size(ACC1sub,1)/2);
+    y0 = round(yc+dyPass01 + size(ACC1sub,2)/2);
+    size(C)
+    x = 1:size(C,2);
+    y = 1:size(C,1);
+    [xx,yy] = meshgrid(x,y);
+    figure
+    imagesc(C)
+    C(((xx-x0).^2+(yy-y0).^2) > R^2)=0;
+    figure
+    imagesc(C)
+end
+
+%
+[ypeak,xpeak] = find(C==max(C(:)));
+yoffSet = ypeak-size(ACC1sub,1) + w;
+xoffSet = xpeak-size(ACC1sub,2) + w;
+size(xoffSet)
 end
