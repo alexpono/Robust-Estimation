@@ -18,17 +18,20 @@
 close all
 clear all
 
-totalnFrames = 500;
 him = 1152;
 wim = 1152;
 % load CC:
 % cd('D:\IFPEN\IFPEN_manips\expe_2021_03_11\for4DPTV\re01_20spatules\Processed_DATA\zaber_100mm_20spatules_16bit_20210311T153131')
+
+cd('C:\Users\Lenovo\Desktop\IFPEN\DL\for4DPTV\Processed_DATA\visu01_20210402T160947')
 CCtemp = load('centers_cam1.mat', 'CC');
 CC1 = CCtemp.CC;
 CCtemp = load('centers_cam2.mat', 'CC');
 CC2 = CCtemp.CC;
+totalnFrames = size(CC1,2);
+
 %% ROBUST ESTIMATION PART 1.1 removing the NaNs for all t
-for it = 1 : 500 
+for it = 1 : size(CC1,2) 
 ikill = [];
 for ip = 1 : size(CC1(it).X,2)
     if isnan(CC1(it).X(ip)) || isnan(CC1(it).Y(ip))
@@ -61,22 +64,28 @@ for it = 1 : totalnFrames
         ACC2(yim2,xim2) = ACC1(yim2,xim2) + 255;
     end
 end
+%%
+close all
+monPos = get(0,'MonitorPositions');
+wmon=monPos(3); hmon=monPos(4);
 hcam01 = figure;
-imagesc(20*ACC1)
+imagesc(20*ACC1)%, colormap gray
 title('Camera1')
+set(gcf,'position',[150  hmon/2-100 wmon/3 hmon/2]);
 hcam02 = figure;
-imagesc(20*ACC2)
+imagesc(20*ACC2)%, colormap gray
 title('Camera2')
+set(gcf,'position',[200+wmon/3 hmon/2-100 wmon/3 hmon/2]);
 
-%%  ROBUST ESTIMATION PART 1.3 normxcorr2 pass 01 (on a large window)
+%  ROBUST ESTIMATION PART 1.3 normxcorr2 pass 01 (on a large window)
 % xm,ym : fixed points in camera 1
 c = clock; fprintf('start at %0.2dh%0.2dm\n',c(4),c(5)) 
 filterOrder = 10;
 
 % first pass
-xm = round(wim/2);
-ym = round(him/2);
-wsub = 0.5*mean(xm,ym); % width correlation template image
+xm = 350+round(wim/2);
+ym = -50+round(him/2);
+wsub = round(0.15*mean(xm,ym)); % width correlation template image
 [xoffSet,yoffSet] = imageCorrelation(xm,ym,ACC1,ACC2,wsub,filterOrder);
 
 figure(hcam01), hold on
@@ -90,9 +99,20 @@ dyPass01 =   yoffSet-ym;
 R = (dxPass01^2+dyPass01^2)^(1/2);
 c = clock; fprintf('finished at %0.2dh%0.2dm\n',c(4),c(5)) 
 
+sub01 = imcrop(ACC1,[xm-wsub,ym-wsub,2*wsub,2*wsub]);
+hcam01sub = figure;
+imagesc(sub01)%, colormap gray
+title('Camera1 crop')
+set(gcf,'position',[265    90   431   360]);
+
+sub02 = imcrop(ACC2,[xoffSet-wsub,yoffSet-wsub,2*wsub,2*wsub]);
+hcam02sub = figure;
+imagesc(sub02)%, colormap gray
+title('Camera2 crop')
+set(gcf,'position',[765    90   431   360]);
 %%  ROBUST ESTIMATION PART 1.3 normxcorr2 pass 02 (on a small window)
 
-wti = 400; % width template images
+wti = 150; % width template images
 wstep = 100; % step for sampling the image
 nPartMin = 50; % minimum number of particles to calculate the correlation
 tmpl_IM_tStr = struct(); % structure storing information on template images
@@ -121,7 +141,7 @@ for iCol = 1 : nCol
         tmpl_IM_tStr(iti).subIm = subIm;
         tmpl_IM_tStr(iti).meanSubIm = mean(subIm(:));
         if tmpl_IM_tStr(iti).meanSubIm*(101*101)/255 > nPartMin  && ...
-                (1.5*dxPass01) + xc + wti/2 < wim && ...
+                (1.5*dxPass01) + xc + wti/2 > 0 && ...
                 (1.5*dyPass01) + yc + wti/2 > 0
             tmpl_IM_tStr(iti).correlable = 1;
             pcol = 'g';
@@ -133,16 +153,17 @@ for iCol = 1 : nCol
         clear xp yp
         xp = .5*[-1  1  1 -1 -1]*wti+tmpl_IM_tStr(iti).x;
         yp = .5*[-1 -1  1  1 -1]*wti+tmpl_IM_tStr(iti).y;
-        %patch('xdata',xp,'ydata',yp,'faceColor',pcol,'faceAlpha',.3,'edgeColor','none')
-        %pause(.2)
+        patch('xdata',xp,'ydata',yp,'faceColor',pcol,'faceAlpha',.3,'edgeColor','none')
+        pause(.2)
         
         if tmpl_IM_tStr(iti).correlable == 1
     clear xm ym xoffSet yoffSet
     xm = tmpl_IM_tStr(iti).x;
     ym = tmpl_IM_tStr(iti).y;
-    [xoffSet,yoffSet] = imageCorrelation(xm,ym,ACC1,ACC2,round(wti/2),filterOrder);%,'cleanC',dxPass01,dyPass01,R);
+    [xoffSet,yoffSet] = imageCorrelation(xm,ym,ACC1,ACC2,round(wti/2),filterOrder,'cleanC',dxPass01,dyPass01,150);
     tmpl_IM_tStr(iti).xoffSet = xoffSet;
     tmpl_IM_tStr(iti).yoffSet = yoffSet;
+    figure(hcam01)
     quiver(xm,ym,xoffSet-xm,yoffSet-ym,'r','lineWidth',1)
         end
     end
@@ -169,7 +190,7 @@ movingPoints = [[tmpl_IM_tStr(corOK).xoffSet]',[tmpl_IM_tStr(corOK).yoffSet]'];
 transformationType = 'affine';
 tform1 = fitgeotrans(movingPoints,fixedPoints,transformationType);
 
-[X,Y] = transformPointsForward(tform1,271,456);  % check some points
+[X,Y] = transformPointsForward(tform1,1010,583);  % check some points
 [X,Y] = transformPointsForward(tform1,0,0);           % check the change of (x0,y0)
 ACC1tformed = imwarp(ACC2,tform1, 'OutputView', imref2d( size(ACC1) ));
 
@@ -178,7 +199,7 @@ imshow( falseColorOverlay, 'initialMagnification', 'fit');
 
 % figure to check the tform1
 % figure, hold on, box on
-% for it = 1 : 500
+% for it = 1 : size(CC1,2)
 %     %pause(.1)
 %     inputPoints = [CC2(it).X;CC2(it).Y]';
 %     PointsC1 = [CC1(it).X;CC1(it).Y]';
@@ -194,7 +215,7 @@ imshow( falseColorOverlay, 'initialMagnification', 'fit');
 
 %% ROBUST ESTIMATION PART 2.1 from BLP TRAJECTOIRE 2D
 tic
-for it = 1 : 500
+for it = 1 : size(CC1,2)
     part_cam1(it).pos(:,1) = [CC1(it).X]; % out_CAM1(:,1);
     part_cam1(it).pos(:,2) = [CC1(it).Y]; % out_CAM1(:,2);
     part_cam1(it).pos(:,3) = ones(length([CC1(it).X]),1)*it;
@@ -222,7 +243,7 @@ toc
 
 figure('defaultAxesFontSize',20), hold on, box on
 
-for it = 1 : 500
+for it = 1 : size(CC1,2)
     clear xpos ypos
     xpos = [CC1(it).X];
     ypos = [CC1(it).Y];
@@ -265,22 +286,26 @@ function [xoffSet,yoffSet] = imageCorrelation(xc,yc,ACC1,ACC2,w,filterOrder,vara
     % set C to zero above a predefined radius
     % Checking varargin structure
     if ( length(varargin) > 1 )
-        %varargin = varargin{:,2}
-        varargin{:,1}
-        varargin{:,2}
-        varargin{:,3}
-        varargin{:,4}
-        R = varargin{4};      % in pixels
-        x0 = xc+varargin{2};
-        y0 = yc+varargin{3};
-        x = 1:1302;
-        y = 1:1302;
+        fprintf('cleaning C \n')
+        dxPass01 = double(varargin{:,2});
+        dyPass01 = double(varargin{:,3});
+        R = double(varargin{:,4});
+        x0 = round(xc+dxPass01 + size(ACC1sub,1)/2);
+        y0 = round(yc+dyPass01 + size(ACC1sub,2)/2);
+        size(C)
+        x = 1:size(C,2);
+        y = 1:size(C,1);
         [xx,yy] = meshgrid(x,y);
+        figure
+        imagesc(C)
         C(((xx-x0).^2+(yy-y0).^2) > R^2)=0;
+        figure
+        imagesc(C)
     end
 
     %
     [ypeak,xpeak] = find(C==max(C(:)));
     yoffSet = ypeak-size(ACC1sub,1) + w;
     xoffSet = xpeak-size(ACC1sub,2) + w;
+    size(xoffSet)
 end

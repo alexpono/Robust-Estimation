@@ -20,6 +20,23 @@ sessionPath = analysisFolder;                       % for 4D PTV
 CalibFile = strcat('D:\pono\IFPEN\IFPEN_manips\expe_2021_02_16_calibration\',...
            'calibration_mcin2\images4_4DPTV\calib.mat');
 toc
+
+%%
+tic
+fprintf('define folders and experiment name\n')
+
+nameExpe = 'visu01_20210402T160947';
+inputFolder = 'C:\Users\Lenovo\Desktop\IFPEN\DL';
+outputFolder = strcat('C:\Users\Lenovo\Desktop\IFPEN\DL\for4DPTV\DATA\',nameExpe);
+
+session.input_path = strcat('C:\Users\Lenovo\Desktop\IFPEN\DL\for4DPTV\');
+session.output_path = session.input_path;
+
+analysisFolder = 'C:\Users\Lenovo\Desktop\IFPEN\DL\analysisFolder';
+sessionPath = analysisFolder;                       % for 4D PTV
+
+CalibFile = strcat('expe_20210216_calibration\calib.mat');
+toc
 %% papier déplacé à la main
 tic
 fprintf('define folders and experiment name\n')
@@ -78,6 +95,7 @@ end
 fprintf('done\n')
 
 %% STEP 4 - calib manip 2021 02 17
+% dirIn  = 'D:\pono\IFPEN\IFPEN_manips\expe_2021_02_16_calibration\calibration_mcin2\images4_4DPTV\';
 dirIn  = 'D:\pono\IFPEN\IFPEN_manips\expe_2021_02_16_calibration\calibration_mcin2\images4_4DPTV\';
 zPlanes = [10,20,30,40,50]; % mm
 camName = {1,2};
@@ -95,7 +113,7 @@ MakeCalibration_Vnotch(dirIn, zPlanes, camName, gridSpace, th, dotSize, lnoise, 
 
 %% STEP 5 - background images - part 01 - background images
 
-totalnFrames = 500;
+totalnFrames = 300;
 fprintf('calculate background images\n')
 
 tic
@@ -127,9 +145,9 @@ title('BackgroundMean')
 
 % session
 CamNum      = 1;
-firstFrame  = 100;
+firstFrame  = 1;
 nframes     = totalnFrames;
-th          = 10;
+th          = 5;
 sz          = 3; 
 test        = 1;
 %BackgroundType
@@ -138,11 +156,11 @@ test        = 1;
 CC = CenterFinding2D(session,nameExpe,CamNum,firstFrame,nframes,th,sz,test);
 
 %% STEP 5 - CenterFinding2D  
-
+c = clock; fprintf('started at %0.2dh%0.2dm\n',c(4),c(5)) 
 % session
 firstFrame  = 1;
 nframes     = totalnFrames;
-th          = 10;
+th          = 5;
 sz          = 3; 
 test        = 0;
 %BackgroundType
@@ -152,13 +170,13 @@ CamNum  = 1;
 CC1 = CenterFinding2D(session,nameExpe,CamNum,firstFrame,nframes,th,sz); % for camera 1
 CamNum  = 2;
 CC2 = CenterFinding2D(session,nameExpe,CamNum,firstFrame,nframes,th,sz); % for camera 2
-
+c = clock; fprintf('finished at %0.2dh%0.2dm\n',c(4),c(5)) 
 
 %% STEP 5 - CenterFinding2D  
 close all
 %% STEP 5 - clean center finding results: here we remove a lot of fake points found 
-
-CCtemp = CC1;
+clear CCtemp
+CCtemp = CC2;
 %% STEP 5 - filter CC1 and remove all points in the left 
 for it = 1 : size(CCtemp,2)
     i2rmv = CCtemp(it).X < 48;
@@ -169,12 +187,12 @@ end
 figure
 hold on, box on
 set(gcf,'position',[0061 0181 1128 0808])
-for it = 1 : 1%totalnFrames
+for it = 1 : totalnFrames
     %title(sprintf('time : %0.0f',it))
     plot(CCtemp(it).X,CCtemp(it).Y,'sk')
     %pause(.01)
 end
-
+set(gca,'ydir','reverse')
 %%  STEP 5 - showing results of center finding - two cameras at same time
 c = clock;
 sprintf('doing plot at %0.2dh%0.2d',c(4),c(5))
