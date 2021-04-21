@@ -5,6 +5,8 @@
 tic
 fprintf('define folders and experiment name\n')
 
+expe_2021_04_20_beads
+
 nameExpe = 'zaber_100mm_20spatules_16bit_20210311T153131';
 inputFolder = 'D:\pono\IFPEN\IFPEN_manips\expe_2021_03_11\re01_20spatules';
 outputFolder = strcat('D:\pono\IFPEN\IFPEN_manips\expe_2021_03_11\for4DPTV\',...
@@ -17,8 +19,8 @@ session.output_path = session.input_path;
 analysisFolder = 'D:\pono\IFPEN\analysisExperiments\analysis_expe_20210311\analysis4DPTV';
 sessionPath = analysisFolder;                       % for 4D PTV
 
-CalibFile = strcat('D:\pono\IFPEN\IFPEN_manips\expe_2021_02_16_calibration\',...
-           'calibration_mcin2\images4_4DPTV\calib.mat');
+%CalibFile = strcat('D:\pono\IFPEN\IFPEN_manips\expe_2021_02_16_calibration\',...
+%           'calibration_mcin2\images4_4DPTV\calib.mat');
 toc
 
 %%
