@@ -25,7 +25,7 @@ toc
 tic
 fprintf('define folders and experiment name\n')
 
-nameExpe = 'visu01_20210402T160947';
+nameExpe = 'visu01_20210402T155814';
 inputFolder = 'C:\Users\Lenovo\Desktop\IFPEN\DL';
 outputFolder = strcat('C:\Users\Lenovo\Desktop\IFPEN\DL\for4DPTV\DATA\',nameExpe);
 
@@ -113,7 +113,7 @@ MakeCalibration_Vnotch(dirIn, zPlanes, camName, gridSpace, th, dotSize, lnoise, 
 
 %% STEP 5 - background images - part 01 - background images
 
-totalnFrames = 300;
+totalnFrames = 1000;
 fprintf('calculate background images\n')
 
 tic
@@ -147,21 +147,43 @@ title('BackgroundMean')
 CamNum      = 1;
 firstFrame  = 1;
 nframes     = totalnFrames;
-th          = 5;
-sz          = 3; 
+th          = 25;
+sz          = 2; 
 test        = 1;
 %BackgroundType
 %format
 
 CC = CenterFinding2D(session,nameExpe,CamNum,firstFrame,nframes,th,sz,test);
+%% testing centerfinding2D
+ManipName = nameExpe;
+format='%05d.tif';
+kframe = 1;
+fprintf(ManipName);
+folderin = fullfile(session.input_path, 'DATA', ManipName, ['cam' num2str(CamNum)])
+folderout = fullfile(session.output_path, 'Processed_DATA', ManipName)
+BackgroundFile = fullfile(folderout,['Background_cam' num2str(CamNum) '.mat']);
 
+load(BackgroundFile,'BackgroundMin','BackgroundMax','BackgroundMean')
+Background=BackgroundMean;
+
+BaseName = join([ManipName '_cam' num2str(CamNum) '_' format],''); % base name of pictures
+ImgName = fullfile(folderin,sprintf(BaseName, kframe));
+Im = imread(ImgName) - Background;
+
+out=pkfnd(Im,th,sz); % Provides intensity maxima positions
+npar = size(out,1);
+
+figure('defaultAxesFontSize',20)
+hold on
+imagesc(Im)
+plot(out(:,1),out(:,2),'or')
 %% STEP 5 - CenterFinding2D  
 c = clock; fprintf('started at %0.2dh%0.2dm\n',c(4),c(5)) 
 % session
 firstFrame  = 1;
 nframes     = totalnFrames;
-th          = 5;
-sz          = 3; 
+th          = 40;
+sz          = 4; 
 test        = 0;
 %BackgroundType
 %format
