@@ -24,7 +24,8 @@ wim = 1152;
 % cd('D:\IFPEN\IFPEN_manips\expe_2021_03_11\for4DPTV\re01_20spatules\Processed_DATA\zaber_100mm_20spatules_16bit_20210311T153131')
 
 %cd('C:\Users\Lenovo\Desktop\IFPEN\DL\for4DPTV\Processed_DATA\visu01_20210402T160947')
-cd('C:\Users\Lenovo\Desktop\IFPEN\DL\for4DPTV\Processed_DATA\visu01_20210402T155814')
+%cd('C:\Users\Lenovo\Desktop\IFPEN\DL\for4DPTV\Processed_DATA\visu01_20210402T155814')
+cd('D:\IFPEN\IFPEN_manips\expe_2021_04_20_beads\for4DPTV\Processed_DATA\expe65_20210420T172713')
 CCtemp = load('centers_cam1.mat', 'CC');
 CC1 = CCtemp.CC;
 CCtemp = load('centers_cam2.mat', 'CC');
@@ -41,6 +42,8 @@ for it = 1 : size(CC1,2)
     end
     CC1(it).X(ikill) = [];
     CC1(it).Y(ikill) = [];
+    clear ikill
+    ikill = [];
     for ip = 1 : size(CC2(it).X,2)
         if isnan(CC2(it).X(ip)) || isnan(CC2(it).Y(ip))
             ikill = [ikill,ip];
@@ -166,7 +169,7 @@ set(gcf,'position',[765    90   431   360]);
 
 wti = 250; % width template images
 wstep = 100; % step for sampling the image
-nPartMin = 100; % minimum number of particles to calculate the correlation
+nPartMin = 200; % minimum number of particles to calculate the correlation
 tmpl_IM_tStr = struct(); % structure storing information on template images
 
 % cut the image in a lot of small images
@@ -227,6 +230,7 @@ for iCol = 1 : nCol
     end
 end
 
+sprintf('done')
 
 %% ROBUST ESTIMATION PART 1.4 build tform1
 %fixedPoints = [163 427 963 951; 570 781 322 738]';
@@ -293,10 +297,10 @@ maxdist = 3;
 longmin = 5;
 [trajArray_CAM1,tracks_CAM1]=TAN_track2d(part_cam1,maxdist,longmin);
 
-maxdist = 6;
 [trajArray_CAM2,tracks_CAM2]=TAN_track2d(part_cam2,maxdist,longmin);
 toc
 
+sprintf('done')
 %% try to associate trajectories: % -> SPEED UP THIS PART !!!
 c = clock; fprintf('start at %0.2dh%0.2dm\n',c(4),c(5))
 
@@ -399,7 +403,7 @@ clear structPotentialPairs
 tic
 figure('defaultAxesFontSize',20), box on, hold on
 for itrj01 = 1 : length(trajArray_CAM1)
-    % fprintf('progress: %0.4d / %0.4d \n',itrj01,length(trajArray_CAM1))
+    fprintf('progress: %0.4d / %0.4d \n',itrj01,length(trajArray_CAM1))
     
     clear xtCAM01 ytCAM01
     
@@ -499,7 +503,7 @@ for itrj02 = 1 : length(trajArray_CAM2)
     plot(xtCAM02,ytCAM02,'-','Color', [0 0 1 .25],'lineWidth',2)
 end
 % show pairs one by one
-for iP = 1 : length(structPotentialPairs) % [69,102,108,114,120]
+for iP = 1 : 1000%length(structPotentialPairs) % [69,102,108,114,120]
 
 itrj01 = structPotentialPairs(iP).trajCAM01;
 itrj02 = structPotentialPairs(iP).trajCAM02;

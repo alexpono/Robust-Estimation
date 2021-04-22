@@ -5,15 +5,13 @@
 tic
 fprintf('define folders and experiment name\n')
 
-expe_2021_04_20_beads
 
-nameExpe = 'zaber_100mm_20spatules_16bit_20210311T153131';
-inputFolder = 'D:\pono\IFPEN\IFPEN_manips\expe_2021_03_11\re01_20spatules';
-outputFolder = strcat('D:\pono\IFPEN\IFPEN_manips\expe_2021_03_11\for4DPTV\',...
-                      're01_20spatules\DATA\',nameExpe);
 
-session.input_path = strcat('D:\pono\IFPEN\IFPEN_manips\expe_2021_03_11\for4DPTV\',...
-                      're01_20spatules\');
+nameExpe = 'expe65_20210420T172713';
+inputFolder = 'D:\IFPEN\IFPEN_manips\expe_2021_04_20_beads\';
+outputFolder = strcat(inputFolder,'for4DPTV\DATA\',nameExpe);
+
+session.input_path = strcat(inputFolder,'for4DPTV\');
 session.output_path = session.input_path;
 
 analysisFolder = 'D:\pono\IFPEN\analysisExperiments\analysis_expe_20210311\analysis4DPTV';
@@ -66,8 +64,8 @@ clear files
 files = struct();
 namesfiles = dir('*.mcin2');
 %%
-files(1).name = namesfiles(1).name;
-files(2).name = namesfiles(2).name;
+files(1).name = namesfiles(39).name;
+files(2).name = namesfiles(40).name;
 
 
 cd(outputFolder)
@@ -84,7 +82,7 @@ for iCam = 1 : 2 %length(files)
     cd(inputFolder)
     [M,~,params]=mCINREAD2(filename,1,totalnFrames);
     
-    for k = 201:totalnFrames 
+    for k = 1:totalnFrames 
         if (~mod(k,100) == 1) || (k==1)
             fprintf('image: %0.0f / %0.0f \n',k-200,totalnFrames)
         end
@@ -112,10 +110,23 @@ blackDots = 0;
 cd(dirIn)
 MakeCalibration_Vnotch(dirIn, zPlanes, camName, gridSpace, th, dotSize, lnoise, blackDots)
 
+%% STEP 4 - calib manip 2021 04 22
+dirIn  = 'D:\IFPEN\IFPEN_manips\expe_2021_04_22_calibration\for4DPTV\';
+zPlanes = [10:2:30]; % mm
+camName = {1,2};
+dotSize = 40; % pixels
+th = 15; 
+
+gridSpace = 2*5;            % mm
+lnoise = 1;
+blackDots = 0;
+%MakeCalibration_Vnotch(dirIn,zPlanes,camName,gridSpace,th,dotSize,lnoise,blackDots,extension,FirstPlane,FirstCam)
+% manip IFPEN
+cd(dirIn)
+MakeCalibration_Vnotch(dirIn, zPlanes, camName, gridSpace, th, dotSize, lnoise, blackDots)
 
 %% STEP 5 - background images - part 01 - background images
 
-totalnFrames = 1000;
 fprintf('calculate background images\n')
 
 tic
@@ -149,8 +160,8 @@ title('BackgroundMean')
 CamNum      = 1;
 firstFrame  = 1;
 nframes     = totalnFrames;
-th          = 25;
-sz          = 2; 
+th          = 1;
+sz          = 3; 
 test        = 1;
 %BackgroundType
 %format
@@ -184,8 +195,8 @@ c = clock; fprintf('started at %0.2dh%0.2dm\n',c(4),c(5))
 % session
 firstFrame  = 1;
 nframes     = totalnFrames;
-th          = 40;
-sz          = 4; 
+th          = 1;
+sz          = 3; 
 test        = 0;
 %BackgroundType
 %format
