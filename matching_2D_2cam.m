@@ -25,7 +25,8 @@ wim = 1152;
 
 %cd('C:\Users\Lenovo\Desktop\IFPEN\DL\for4DPTV\Processed_DATA\visu01_20210402T160947')
 %cd('C:\Users\Lenovo\Desktop\IFPEN\DL\for4DPTV\Processed_DATA\visu01_20210402T155814')
-cd('D:\IFPEN\IFPEN_manips\expe_2021_04_20_beads\for4DPTV\Processed_DATA\expe65_20210420T172713')
+%cd('D:\IFPEN\IFPEN_manips\expe_2021_04_20_beads\for4DPTV\Processed_DATA\expe65_20210420T172713')
+cd('C:\Users\Lenovo\Desktop\manip_20210420\expe65')
 CCtemp = load('centers_cam1.mat', 'CC');
 CC1 = CCtemp.CC;
 CCtemp = load('centers_cam2.mat', 'CC');
