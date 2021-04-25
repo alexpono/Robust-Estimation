@@ -33,6 +33,10 @@ CCtemp = load('centers_cam2.mat', 'CC');
 CC2 = CCtemp.CC;
 totalnFrames = size(CC1,2);
 
+CC1(501:end) = [];
+CC2(501:end) = [];
+totalnFrames = size(CC1,2);
+
 %% ROBUST ESTIMATION PART 1.1 removing the NaNs for all t
 for it = 1 : size(CC1,2)
     ikill = [];
@@ -122,7 +126,7 @@ set(gcf,'position',[765    90   431   360]);
 
 close all
 monPos = get(0,'MonitorPositions');
-wmon=monPos(3); hmon=monPos(4);
+wmon=monPos(end,3); hmon=monPos(end,4);
 hcam01 = figure;
 imagesc(20*ACC1)%, colormap gray
 title('Camera1')
@@ -174,7 +178,7 @@ nPartMin = 200; % minimum number of particles to calculate the correlation
 tmpl_IM_tStr = struct(); % structure storing information on template images
 
 % cut the image in a lot of small images
-hcam01 = figure;
+hcam01 = figure('defaultAxesFontSize',20);
 imagesc(20*ACC1)%, colormap gray
 title('Camera1'), hold on
 clear nCol nRow
@@ -209,7 +213,7 @@ for iCol = 1 : nCol
         clear xp yp
         xp = .5*[-1  1  1 -1 -1]*wti+tmpl_IM_tStr(iti).x;
         yp = .5*[-1 -1  1  1 -1]*wti+tmpl_IM_tStr(iti).y;
-        patch('xdata',xp,'ydata',yp,'faceColor',pcol,'faceAlpha',.3,'edgeColor','none')
+        % patch('xdata',xp,'ydata',yp,'faceColor',pcol,'faceAlpha',.3,'edgeColor','none')
         pause(.2)
         
         if tmpl_IM_tStr(iti).correlable == 1
@@ -225,7 +229,7 @@ for iCol = 1 : nCol
                 quiver(xm,ym,xoffSet-xm,yoffSet-ym,'-r','lineWidth',2)
             else
                 tmpl_IM_tStr(iti).correlable = 0;
-                quiver(xm,ym,xoffSet-xm,yoffSet-ym,'--r','lineWidth',2)
+                quiver(xm,ym,xoffSet-xm,yoffSet-ym,'--r','lineWidth',1)
             end
         end
     end
@@ -255,11 +259,11 @@ tform1 = fitgeotrans(movingPoints,fixedPoints,transformationType);
 
 [X,Y] = transformPointsForward(tform1,1010,583);  % check some points
 [X,Y] = transformPointsForward(tform1,0,0);           % check the change of (x0,y0)
-ACC1tformed = imwarp(ACC2,tform1, 'OutputView', imref2d( size(ACC1) ));
+ACC2tformed = imwarp(ACC2,tform1, 'OutputView', imref2d( size(ACC1) ));
 
-falseColorOverlay = imfuse( 40*ACC1, 40*ACC1tformed);
+falseColorOverlay = imfuse( 40*ACC1, 40*ACC2tformed);
 imshow( falseColorOverlay, 'initialMagnification', 'fit');
-
+set(gcf,'position',[ 189         122        1058         858])
 % figure to check the tform1
 % figure, hold on, box on
 % for it = 1 : size(CC1,2)
@@ -273,7 +277,10 @@ imshow( falseColorOverlay, 'initialMagnification', 'fit');
 %     pause(.1)
 %     axis([110 210 700 900])
 % end
-
+%%
+falseColorOverlay = imfuse( 1*ACC1, 1*ACC2);
+imshow( falseColorOverlay, 'initialMagnification', 'fit');
+set(gcf,'position',[ 189         122        1058         858])
 %% ROBUST ESTIMATION PART 2.1 track particles in 2D on each camera
 
 %% ROBUST ESTIMATION PART 2.1 from BLP TRAJECTOIRE 2D
@@ -302,6 +309,25 @@ longmin = 5;
 toc
 
 sprintf('done')
+%%
+clear ikill01 ikill02
+for itraj1 = 1 : length(trajArray_CAM1)
+    lt1(itraj1) = size(trajArray_CAM1(itraj1).track,1) ; 
+end
+%figure
+%histogram(lt1)
+ikill01 = find(lt1<10);
+
+for itraj2 = 1 : length(trajArray_CAM2)
+    lt2(itraj2) = size(trajArray_CAM2(itraj2).track,1) ; 
+end
+%figure
+%histogram(lt1)
+ikill02 = find(lt2<10);
+
+trajArray_CAM1(ikill01)=[];
+trajArray_CAM2(ikill02)=[];
+
 %% try to associate trajectories: % -> SPEED UP THIS PART !!!
 c = clock; fprintf('start at %0.2dh%0.2dm\n',c(4),c(5))
 
@@ -504,7 +530,7 @@ for itrj02 = 1 : length(trajArray_CAM2)
     plot(xtCAM02,ytCAM02,'-','Color', [0 0 1 .25],'lineWidth',2)
 end
 % show pairs one by one
-for iP = 1 : 1000%length(structPotentialPairs) % [69,102,108,114,120]
+for iP = 1 : length(structPotentialPairs) % [69,102,108,114,120]
 
 itrj01 = structPotentialPairs(iP).trajCAM01;
 itrj02 = structPotentialPairs(iP).trajCAM02;
