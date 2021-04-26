@@ -18,7 +18,8 @@
 close all
 clear all
 
-CalibFile = strcat('D:\IFPEN\IFPEN_manips\expe_2021_04_22_calibration\for4DPTV\calib.mat');
+% CalibFile = strcat('D:\IFPEN\IFPEN_manips\expe_2021_04_22_calibration\for4DPTV\calib.mat');
+% CalibFile = strcat('D:\IFPEN\IFPEN_manips\expe_2021_04_22_calibration\for4DPTV\calib.mat');
 
 him = 1152;
 wim = 1152;
@@ -27,8 +28,8 @@ wim = 1152;
 
 %cd('C:\Users\Lenovo\Desktop\IFPEN\DL\for4DPTV\Processed_DATA\visu01_20210402T160947')
 %cd('C:\Users\Lenovo\Desktop\IFPEN\DL\for4DPTV\Processed_DATA\visu01_20210402T155814')
-cd('D:\IFPEN\IFPEN_manips\expe_2021_04_20_beads\for4DPTV\Processed_DATA\expe65_20210420T172713')
-%cd('C:\Users\Lenovo\Desktop\manip_20210420\expe65')
+%cd('D:\IFPEN\IFPEN_manips\expe_2021_04_20_beads\for4DPTV\Processed_DATA\expe65_20210420T172713')
+cd('C:\Users\Lenovo\Desktop\manip_20210420\expe65')
 CCtemp = load('centers_cam1.mat', 'CC');
 CC1 = CCtemp.CC;
 CCtemp = load('centers_cam2.mat', 'CC');
@@ -215,7 +216,7 @@ for iCol = 1 : nCol
         clear xp yp
         xp = .5*[-1  1  1 -1 -1]*wti+tmpl_IM_tStr(iti).x;
         yp = .5*[-1 -1  1  1 -1]*wti+tmpl_IM_tStr(iti).y;
-        %patch('xdata',xp,'ydata',yp,'faceColor',pcol,'faceAlpha',.3,'edgeColor','none')
+        patch('xdata',xp,'ydata',yp,'faceColor','none','faceAlpha',.3,'edgeColor',pcol)
         pause(.2)
         
         if tmpl_IM_tStr(iti).correlable == 1
@@ -260,7 +261,7 @@ transformationType = 'affine';
 tform1 = fitgeotrans(movingPoints,fixedPoints,transformationType);
 
 [X,Y] = transformPointsForward(tform1,1010,583);  % check some points
-[X,Y] = transformPointsForward(tform1,0,0);           % check the change of (x0,y0)
+[X,Y] = transformPointsForward(tform1,0,0);       % check the change of (x0,y0)
 ACC2tformed = imwarp(ACC2,tform1, 'OutputView', imref2d( size(ACC1) ));
 
 falseColorOverlay = imfuse( 40*ACC1, 40*ACC2tformed);
@@ -478,7 +479,7 @@ c = clock; fprintf('done associating trajectories at %0.2dh%0.2dm\n',c(4),c(5))
 %%
 c = clock; fprintf('start at %0.2dh%0.2dm\n',c(4),c(5))
 tic
-figure('defaultAxesFontSize',20), box on, hold on
+% figure('defaultAxesFontSize',20), box on, hold on
 %%%%%%%%%%
 for iP = 1 : length(structPotentialPairs)
     % iP
@@ -496,7 +497,7 @@ for iP = 1 : length(structPotentialPairs)
     for it = 1 : length([structPotentialPairs(iP).tCAM01])
         it1 = structPotentialPairs(iP).tCAM01(it);
         it2 = structPotentialPairs(iP).tCAM02(it);
-        plot([x01(it1),x02(it2)],[y01(it1),y02(it2)],'-g')
+        %plot([x01(it1),x02(it2)],[y01(it1),y02(it2)],'-g')
         db(it) = ((x01(it1)-x02(it2))^2 + (y01(it1)-y02(it2))^2)^(1/2);
     end
     
@@ -516,12 +517,7 @@ for iP = 1 : length(structPotentialPairs)
 end
 
 c = clock; fprintf('done at %0.2dh%0.2dm\n',c(4),c(5))
-%%
-figure, hold on
- p1 = plot(rand(10,1),'r-','LineWidth',5); hold on
- p2 = plot(rand(10,1),'r-','LineWidth',2);
- p1.Color(4) = 0.25;
- p2.Color(4) = 0.75;
+
 %% good and bad pairing
 tic
 c = clock; fprintf('start at %0.2dh%0.2dm\n',c(4),c(5))
@@ -583,45 +579,9 @@ ax.YLim = [185  510];
 set(gcf,'position',[680   117   990   861])
 c = clock; fprintf('done at %0.2dh%0.2dm\n',c(4),c(5))
 
-%% Crossing the rays - test zone
-Ttype = 'T1';
+%% Crossing the rays
+c = clock; fprintf('on croise les doigts at %0.2dh%0.2dm\n',c(4),c(5))
 
-figure('defaultAxesFontSize',20), box on, hold on
-
-
-% x_pxC1 = 555.8;
-% y_pxC1 = 364.3;
-% x_pxC2 = 568.3;
-% y_pxC2 = 358.7;
-
-x_pxC1 = 571;% 555.8;
-y_pxC1 = 364.2;% 364.3;
-x_pxC2 = 583;% 568.3;
-y_pxC2 = 357.5;% 358.7;
-clear P1 V1 P2 V2
-[P1,V1]=findRaysDarcy02(CalibFile,x_pxC1,y_pxC1,Ttype);
-[P2,V2]=findRaysDarcy02(CalibFile,x_pxC2,y_pxC2,Ttype);
-
-lVBW = 1000; % length rays backward
-lVFW = 1000; % length rays frontward
-
-plot3(P1(1)+V1(1)*[-lVBW lVFW],P1(2)+V1(2)*[-lVBW lVFW],P1(3)+V1(3)*[-lVBW lVFW],'b-')
-plot3(P2(1)+V2(1)*[-lVBW lVFW],P2(2)+V2(2)*[-lVBW lVFW],P2(3)+V2(3)*[-lVBW lVFW],'r-')
-view(3)
-
-%closest point:
-clear lineA0 lineA1 lineB0 lineB1
-lineA0 = P1';
-lineA1 = (P1+V1')';
-lineB0 = P2';
-lineB1 = (P2+V2')';
-[D,Xcp,Ycp,Zcp,Xcq,Ycq,Zcq,Dmin,imin,jmin]= ll_dist3d(lineA0,lineA1,lineB0,lineB1);
-crossP = ([Xcp,Ycp,Zcp]+[Xcq,Ycq,Zcq])/2; % crossing oping
-plot3(crossP(1),crossP(2),crossP(3),'og')
-axis equal
-axis([crossP(1)-10 crossP(1)+10 crossP(2)-10 crossP(2)+10 crossP(3)-10 crossP(3)+10])
-
-%% Crossing the rays - on all the points
 Ttype = 'T1';
 tic
 %figure('defaultAxesFontSize',20), box on, hold on
@@ -635,8 +595,10 @@ itrj02 = structPotentialPairs(iP).trajCAM02;
 clear x01 y01 x02 y02
 x01 = trajArray_CAM1(itrj01).track(:,1);
 y01 = trajArray_CAM1(itrj01).track(:,2);
-x02 = trajArray_CAM2(itrj02).track(:,1); % ERROR--
-y02 = trajArray_CAM2(itrj02).track(:,2); % ERROR--
+x02incam01 = trajArray_CAM2(itrj02).track(:,1); % ERROR--
+y02incam01 = trajArray_CAM2(itrj02).track(:,2); % ERROR--
+[ x02, y02] = transformPointsInverse(tform1,x02incam01,y02incam01);
+
 
 for ixy = 1 : length(x01)
     
@@ -667,6 +629,7 @@ end
 end
 axis equal
 toc
+c = clock; fprintf('rays crossed at %0.2dh%0.2dm\n',c(4),c(5))
 %%
 tic
 figure
