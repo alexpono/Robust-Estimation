@@ -18,6 +18,8 @@
 close all
 clear all
 
+CalibFile = strcat('D:\IFPEN\IFPEN_manips\expe_2021_04_22_calibration\for4DPTV\calib.mat');
+
 him = 1152;
 wim = 1152;
 % load CC:
@@ -25,8 +27,8 @@ wim = 1152;
 
 %cd('C:\Users\Lenovo\Desktop\IFPEN\DL\for4DPTV\Processed_DATA\visu01_20210402T160947')
 %cd('C:\Users\Lenovo\Desktop\IFPEN\DL\for4DPTV\Processed_DATA\visu01_20210402T155814')
-%cd('D:\IFPEN\IFPEN_manips\expe_2021_04_20_beads\for4DPTV\Processed_DATA\expe65_20210420T172713')
-cd('C:\Users\Lenovo\Desktop\manip_20210420\expe65')
+cd('D:\IFPEN\IFPEN_manips\expe_2021_04_20_beads\for4DPTV\Processed_DATA\expe65_20210420T172713')
+%cd('C:\Users\Lenovo\Desktop\manip_20210420\expe65')
 CCtemp = load('centers_cam1.mat', 'CC');
 CC1 = CCtemp.CC;
 CCtemp = load('centers_cam2.mat', 'CC');
@@ -213,7 +215,7 @@ for iCol = 1 : nCol
         clear xp yp
         xp = .5*[-1  1  1 -1 -1]*wti+tmpl_IM_tStr(iti).x;
         yp = .5*[-1 -1  1  1 -1]*wti+tmpl_IM_tStr(iti).y;
-        % patch('xdata',xp,'ydata',yp,'faceColor',pcol,'faceAlpha',.3,'edgeColor','none')
+        %patch('xdata',xp,'ydata',yp,'faceColor',pcol,'faceAlpha',.3,'edgeColor','none')
         pause(.2)
         
         if tmpl_IM_tStr(iti).correlable == 1
@@ -309,26 +311,28 @@ longmin = 5;
 toc
 
 sprintf('done')
-%%
+%% keep only long trajectories 
 clear ikill01 ikill02
 for itraj1 = 1 : length(trajArray_CAM1)
     lt1(itraj1) = size(trajArray_CAM1(itraj1).track,1) ; 
 end
-%figure
-%histogram(lt1)
+figure
+histogram(lt1,[0:2:1000])
+hold on
+plot(10*[1 1],[0 400],'--k')
 ikill01 = find(lt1<10);
 
 for itraj2 = 1 : length(trajArray_CAM2)
     lt2(itraj2) = size(trajArray_CAM2(itraj2).track,1) ; 
 end
-%figure
-%histogram(lt1)
+figure
+histogram(lt2)
 ikill02 = find(lt2<10);
 
 trajArray_CAM1(ikill01)=[];
 trajArray_CAM2(ikill02)=[];
 
-%% try to associate trajectories: % -> SPEED UP THIS PART !!!
+%% try to associate trajectories: prematch
 c = clock; fprintf('start at %0.2dh%0.2dm\n',c(4),c(5))
 
 % figure('defaultAxesFontSize',20), hold on, box on
@@ -425,12 +429,15 @@ end
 toc
 
 %% avec prematch
+
+c = clock; fprintf('start associating trajectories at %0.2dh%0.2dm\n',c(4),c(5))
+
 ipairs = 0;
 clear structPotentialPairs
 tic
 figure('defaultAxesFontSize',20), box on, hold on
 for itrj01 = 1 : length(trajArray_CAM1)
-    fprintf('progress: %0.4d / %0.4d \n',itrj01,length(trajArray_CAM1))
+    % fprintf('progress: %0.4d / %0.4d \n',itrj01,length(trajArray_CAM1))
     
     clear xtCAM01 ytCAM01
     
@@ -466,13 +473,15 @@ for itrj01 = 1 : length(trajArray_CAM1)
     %axis([min(xtCAM01) max(xtCAM01) min(ytCAM01) max(ytCAM01)])
 end
 toc
+axis([0 1152 0 1152])
+c = clock; fprintf('done associating trajectories at %0.2dh%0.2dm\n',c(4),c(5))
 %%
 c = clock; fprintf('start at %0.2dh%0.2dm\n',c(4),c(5))
 tic
 figure('defaultAxesFontSize',20), box on, hold on
 %%%%%%%%%%
 for iP = 1 : length(structPotentialPairs)
-    iP
+    % iP
     itrj01 = structPotentialPairs(iP).trajCAM01;
     itrj02 = structPotentialPairs(iP).trajCAM02;
     
@@ -516,7 +525,7 @@ figure, hold on
 %% good and bad pairing
 tic
 c = clock; fprintf('start at %0.2dh%0.2dm\n',c(4),c(5))
-figure('defaultAxesFontSize',10), box on, hold on
+figure('defaultAxesFontSize',20), box on, hold on
 for itrj01 = 1 : length(trajArray_CAM1)
     clear xtCAM01 ytCAM01
     xtCAM01 = trajArray_CAM1(itrj01).track(:,1);
@@ -550,20 +559,114 @@ it2tt = [structPotentialPairs(iP).tCAM02];
     Dy01 = structPotentialPairs(iP).Dy01;
     Dy02 = structPotentialPairs(iP).Dy02;
     ddd  = structPotentialPairs(iP).d;
-if ddd < 10 && (abs(Dx01-Dx02)<5) && (abs(Dy01-Dy02)<5)
+    
+if ddd < 20 && (abs(Dx01-Dx02)<5) && (abs(Dy01-Dy02)<5)
     plot(x01,y01,'-b','lineWidth',2)
     plot(x02,y02,'-r','lineWidth',2)
+    structPotentialPairs(iP).matched = 1;
     for it = 1 : length([structPotentialPairs(iP).tCAM01])
         it1 = structPotentialPairs(iP).tCAM01(it);
         it2 = structPotentialPairs(iP).tCAM02(it);
         plot([x01(it1),x02(it2)],[y01(it1),y02(it2)],'-g')
     end
+else
+    
+    structPotentialPairs(iP).matched = 0;
 end
 %title(sprintf('iP: %0.0f, d: %0.0f, Dx01: %0.0f, Dx02: %0.0f, Dy01: %0.0f, Dy02: %0.0f ',...
 %    iP,structPotentialPairs(iP).d,Dx01, Dx02, Dy01, Dy02))
 end
 toc
+ax = gca;
+ax.XLim = [480  725];
+ax.YLim = [185  510];
+set(gcf,'position',[680   117   990   861])
 c = clock; fprintf('done at %0.2dh%0.2dm\n',c(4),c(5))
+
+%% Crossing the rays - test zone
+Ttype = 'T1';
+
+figure('defaultAxesFontSize',20), box on, hold on
+
+
+% x_pxC1 = 555.8;
+% y_pxC1 = 364.3;
+% x_pxC2 = 568.3;
+% y_pxC2 = 358.7;
+
+x_pxC1 = 571;% 555.8;
+y_pxC1 = 364.2;% 364.3;
+x_pxC2 = 583;% 568.3;
+y_pxC2 = 357.5;% 358.7;
+clear P1 V1 P2 V2
+[P1,V1]=findRaysDarcy02(CalibFile,x_pxC1,y_pxC1,Ttype);
+[P2,V2]=findRaysDarcy02(CalibFile,x_pxC2,y_pxC2,Ttype);
+
+lVBW = 1000; % length rays backward
+lVFW = 1000; % length rays frontward
+
+plot3(P1(1)+V1(1)*[-lVBW lVFW],P1(2)+V1(2)*[-lVBW lVFW],P1(3)+V1(3)*[-lVBW lVFW],'b-')
+plot3(P2(1)+V2(1)*[-lVBW lVFW],P2(2)+V2(2)*[-lVBW lVFW],P2(3)+V2(3)*[-lVBW lVFW],'r-')
+view(3)
+
+%closest point:
+clear lineA0 lineA1 lineB0 lineB1
+lineA0 = P1';
+lineA1 = (P1+V1')';
+lineB0 = P2';
+lineB1 = (P2+V2')';
+[D,Xcp,Ycp,Zcp,Xcq,Ycq,Zcq,Dmin,imin,jmin]= ll_dist3d(lineA0,lineA1,lineB0,lineB1);
+crossP = ([Xcp,Ycp,Zcp]+[Xcq,Ycq,Zcq])/2; % crossing oping
+plot3(crossP(1),crossP(2),crossP(3),'og')
+axis equal
+axis([crossP(1)-10 crossP(1)+10 crossP(2)-10 crossP(2)+10 crossP(3)-10 crossP(3)+10])
+
+%% Crossing the rays - on all the points
+Ttype = 'T1';
+tic
+%figure('defaultAxesFontSize',20), box on, hold on
+
+
+for iP = 1 : length(structPotentialPairs) 
+if structPotentialPairs(iP).matched == 1
+itrj01 = structPotentialPairs(iP).trajCAM01;
+itrj02 = structPotentialPairs(iP).trajCAM02;
+
+clear x01 y01 x02 y02
+x01 = trajArray_CAM1(itrj01).track(:,1);
+y01 = trajArray_CAM1(itrj01).track(:,2);
+x02 = trajArray_CAM2(itrj02).track(:,1); % ERROR--
+y02 = trajArray_CAM2(itrj02).track(:,2); % ERROR--
+
+for ixy = 1 : length(x01)
+    
+    clear P1 V1 P2 V2
+    [P1,V1]=findRaysDarcy02(CalibFile,x_pxC1,y_pxC1,Ttype);
+    [P2,V2]=findRaysDarcy02(CalibFile,x_pxC2,y_pxC2,Ttype);
+    
+    %lVBW = 1000; % length rays backward
+    %lVFW = 1000; % length rays frontward
+    
+    %plot3(P1(1)+V1(1)*[-lVBW lVFW],P1(2)+V1(2)*[-lVBW lVFW],P1(3)+V1(3)*[-lVBW lVFW],'b-')
+    %plot3(P2(1)+V2(1)*[-lVBW lVFW],P2(2)+V2(2)*[-lVBW lVFW],P2(3)+V2(3)*[-lVBW lVFW],'r-')
+    view(3)
+    
+    %closest point:
+    clear lineA0 lineA1 lineB0 lineB1
+    lineA0 = P1';
+    lineA1 = (P1+V1')';
+    lineB0 = P2';
+    lineB1 = (P2+V2')';
+    [D,Xcp,Ycp,Zcp,Xcq,Ycq,Zcq,Dmin,imin,jmin]= ll_dist3d(lineA0,lineA1,lineB0,lineB1);
+    crossP = ([Xcp,Ycp,Zcp]+[Xcq,Ycq,Zcq])/2; % crossing oping
+    plot3(crossP(1),crossP(2),crossP(3),'og')
+    
+end
+%axis([crossP(1)-10 crossP(1)+10 crossP(2)-10 crossP(2)+10 crossP(3)-10 crossP(3)+10])
+end
+end
+axis equal
+toc
 %%
 tic
 figure
@@ -636,8 +739,288 @@ end
 %% testing the function
 imageCorrelation(xm,ym,ACC1,ACC2,round(wti/2),filterOrder,'cleanC',dxPass01,dyPass01,R)
 %% functions
-% debug the cleaning of C (varargin in function)
 
+function [P,V]=findRaysDarcy02(CalibFile,x_px,y_px,Ttype)
+%% calib : calibration data for this camera
+%% x_px  : x coordinates in px,
+%% y_px  : y coordinates in px,
+%% Ttype : type of the transformation to use (T1=Linear, T3=Cubic).
+
+calibTemp = load(CalibFile,'calib'); calib = calibTemp.calib;
+
+Npart = numel(x_px);
+Nplans = numel(calib);
+
+XYZ = zeros(numel(calib),3,numel(x_px));
+
+for kplan = 1:Nplans
+    I = inpolygon(x_px,y_px,calib(kplan).pimg(calib(kplan).cHull,1),calib(kplan).pimg(calib(kplan).cHull,2));
+    if max(I)>0
+        if Ttype=='T1'
+            [Xtmp,Ytmp]=transformPointsInverse((calib(kplan).T1px2rw),x_px(I==1),y_px(I==1));
+        elseif Ttype=='T3'
+            [Xtmp,Ytmp]=transformPointsInverse((calib(kplan).T3px2rw),x_px(I==1),y_px(I==1));
+        end
+
+        XYZ(kplan,1,I==1)=Xtmp;
+        XYZ(kplan,2,I==1)=Ytmp;
+        XYZ(kplan,3,I==1)=calib(kplan).posPlane;
+    end
+
+    XYZ(kplan,1,I==0) = NaN;
+    XYZ(kplan,2,I==0) = NaN;
+    XYZ(kplan,3,I==0) = NaN;
+end
+    [P, V] = fit3Dline(XYZ);
+    
+    
+end
+
+function [xyz0,direction] = fit3Dline(XYZ)
+
+if max(max(max(isnan(XYZ)))) ==0
+    [xyz0,direction] = fit3Dline_nonan(XYZ);
+else    
+    [P V] = arrayfun(@(I)(fit3Dline_nan(XYZ(:,:,I))),1:size(XYZ,3),'UniformOutput',false);
+    xyz0 = (cell2mat(P'));
+    direction = (cell2mat(V'));
+    
+    xyz0(isnan(xyz0)) = [];
+    direction(isnan(direction)) = [];
+end
+
+end
+
+
+function [P,V]=TAN_fit3Dline(XYZ)
+%%-------------------------------------------------------------------------
+%%computes the line of best fit (in the least square sense) for points in 
+%%Three Dimensional Space using the 3D Orthogonal Distance Regression 
+%%(ODR) line method.
+%%The line is parametrized by l = P + V*t, P(xo,yo,zo) is given by the mean 
+%%of all the points and V(u,v,w) by the eigenvector associated with the 
+%%largest singular value of the matrix M = [xi - xo , yi - yo , zi - zo]
+%%XYZ is a 3D-matrix containing the set of points [xi yi zi] in the 2 first
+%%dimensions, the third dimension correspond to each particle.
+%%P is a 2D-matrix of the form P = [x0_1 y0_1 z0_1 ; ... ; x0_N y0_N z0_N]
+%%V is a 2D-matrix of the form V = [u_1 v_1 w_1 ; ... ; u_N v_N w_N]
+%%-------------------------------------------------------------------------
+
+%XYZ(:,:,1) = [ 4 5 8 ; 7 5 9 ; 4 97 5 ; 78 6 13 ; 12 84 3];
+%XYZ(:,:,2) = [ 78 75 58 ; 5 54 0 ; 74 97 50 ; 57 7 1 ; 1 4 8];
+%XYZ(:,:,3) = [ 41 2 8 ; 7 10 9 ; 11 9 50 ; 78 60 103 ; 21 4 21];
+%XYZ(:,:,4) = [ 13 4 0 ; 55 60 9 ; 1 92 2 ; 8 6 1 ; 2 4 1];
+
+xyz0 = mean(XYZ,1);
+P = squeeze(xyz0)';
+M = XYZ - xyz0; %centering the data
+
+[~, ~, Vec]=arrayfun(@(ii) svd(M(:,:,ii)),[1:size(M,3)],'UniformOutput',false);
+Vac = cat(3,Vec{:}); 
+V = squeeze(Vac(:,1,:))'; %in matlab the singular values are listed in decreasing order.
+
+%dd=arrayfun(@(x) cross(Vac(:,end,x),Vac(:,end-1,x)),[1:size(Vac,3)],'UniformOutput',false);
+%V=cat(2,dd{:})';  clear dd Vac A;
+
+end
+
+function [xyz0,direction]=fit3Dline_nan(XYZ)
+%% [xyz0,direction]=fit3Dline_jv(XYZ)
+%
+% @MBourgoin 01/2019
+
+I = find(isnan(XYZ(:,1)));
+XYZ(I,:)=[];
+
+if size(XYZ,1)>2
+
+xyz0=mean(XYZ);
+%xyz0=cell2mat(arrayfun(@(x) mean(x.CCrw),Proj,'UniformOutput',false)); 
+
+A=bsxfun(@minus,XYZ,xyz0); %center the data
+
+% xyz0=XYZ(3,:);
+% A= XYZ;
+
+% xyz0=XYZ(plan_centre,:);
+% A=bsxfun(@minus,XYZ,xyz0); %center the data
+
+%[U,S,V]=svd(A);
+[Uac Sac Vac]=arrayfun(@(kkk) svd(A(:,:,kkk)),[1:size(A,3)],'UniformOutput',false);
+Ua=cat(3,Uac{:}); 
+Sa=cat(3,Sac{:});
+Va=cat(3,Vac{:}); clear Uac Sac Vac;
+
+%direction=cross(V(:,end),V(:,end-1));
+dd=arrayfun(@(x) cross(Va(:,end,x),Va(:,end-1,x)),[1:size(Va,3)],'UniformOutput',false);
+direction=cat(3,dd{:})';  clear dd;
+else
+    %xyz0 = [NaN NaN NaN];
+    %direction = [NaN NaN NaN];
+    xyz0=[];
+    direction=[];
+end
+
+%line = [xyz0'  direction];
+end
+
+function [xyz0,direction]=fit3Dline_nonan(XYZ)
+
+% @JVessaire 01/2019
+
+xyz0=mean(XYZ,1);
+Aa=bsxfun(@minus,XYZ,xyz0); %center the data
+xyz0=squeeze(xyz0)';
+
+%Aa=permute(A,[3 2 1]);
+
+[~, ~, Vac]=arrayfun(@(kkk) svd(Aa(:,:,kkk)),[1:size(Aa,3)],'UniformOutput',false);
+Va=cat(3,Vac{:}); 
+
+dd=arrayfun(@(x) cross(Va(:,end,x),Va(:,end-1,x)),[1:size(Va,3)],'UniformOutput',false);
+direction=cat(2,dd{:})'; clear dd Vac A;
+
+end
+
+function [D,Xcp,Ycp,Zcp,Xcq,Ycq,Zcq,Dmin,imin,jmin]= ll_dist3d(P0,P1,Q0,Q1)
+%ll_dist3d - Find the distances between each pair of straight 3D lines in
+% two sets. Find the closest points on each pair, and the pair with minimum
+% distance. Each line is defined by two distinct points.
+%
+% Input:
+% P0 - array of first points of the first set (m X 3), where m is the
+% number of lines in the first set. P0(j,1), P0(j,2), P0(j,3) are X, Y
+% and X coordinates, accordingly, of point j.
+% Pl - array of second points of the first set (m X 3), where m is the
+% number of lines in the first set. P1(j,1), Pl(j,2), Pl(j,3) are X, Y
+% and X coordinates, accordingly, of point j.
+% Q0 - array of first points of the second set (n % 3), where n is the
+% number of lines in the second set. Q0(k,1), Q0(k,2), Q0(k,3) are X, Y
+% and X coordinates, accordingly, of point k.
+% Ql - array of second points of the second set (n % 3), where n is the
+% number of lines in the second set. Q0(k,1), Q0(k,2), Q0(k,3) are X, Y
+% and X coordinates accordingly of point k.
+% Output:
+% D - array of distances between line pairs (m X n). D(j,k) is the
+% distance between line j from the first (P) set, and line k from the
+% second (Q) set.
+% Xcp - array of X coordinates of closest points belonging to the first
+% (P) set (m X n). Xcp(j,k) is an % coordinate of the closest point on a
+% line j defined by P0(j,:) and P1(j,:), computed to the line k defined
+% by Q0(k,:) and Q1(k,:).
+% Ycp - array of Y coordinates of closest points belonging to the first
+% (P) set (m X n). See Xcp definition.
+% Zcp - array of Y coordinates of closest points belonging to the first
+% (P) set (m X n). See Xcp definition.
+% Xcq - array of X coordinates of closest points belonging to the second
+% (Q) set (m X n). Xcq(j,k) is an % coordinate of the closest point on a
+% line k defined by Q0(k,:) and Q1(k,:), computed to the line j defined
+% by P0(j,:) and P1(1,:).
+% Ycq - array of Y coordinates of closest points belonging to the second
+% (Q) set (m X n). See Xcq definition.
+% Zcq - array of % coordinates of closest points belonging to the second
+% (Q) set (m X n). See Xcq definition.
+%
+% Remarks: 
+% Below is a simple unit test for this function. The test creates 
+% 2 sets of random 3D lines, finds the distances between each pair of
+% lines, and plots the pair with shortest distance
+% To run the test, uncommnent the following lines:
+%
+% n1 = 4; % number of lines in first set
+% n2 = 2; % number of lines in first set
+% P0 = rand(n1,3); P1 = rand(n1,3); Q0 = rand(n2,3); Q1 = rand(n2,3);
+% [D,Xcp,Ycp,Zcp,Xcq,Ycq,Zcq,Dmin,imin,jmin] = ll_dist3d(P0, P1, Q0, Q1);
+% t = (-2:0.01:2);
+% Tp = repmat(t(:), 1, size(P0,1));
+% Tq = repmat(t(:), 1, size(Q0,1)); 
+% Xp = repmat(P0(:,1)',[size(t,2), 1]) + Tp.*(repmat(P1(:,1)',[size(t,2),1])-...
+% repmat(P0(:,1)', size(t,2), 1));
+% Yp = repmat(P0(:,2)',[size(t,2), 1]) + Tp.*(repmat(P1(:,2)',[size(t,2),1])-...
+% repmat(P0(:,2)', size(t,2), 1));
+% Zp = repmat(P0(:,3)',[size(t,2), 1]) + Tp.*(repmat(P1(:,3)',[size(t,2),1])-...
+% repmat(P0(:,3)', size(t,2), 1));
+% Xq = repmat(Q0(:,1)', size(t,2), 1) + Tq.*(repmat(Q1(:,1)',size(t,2),1)-...
+% repmat(Q0(:,1)', size(t,2), 1));
+% Yq = repmat(Q0(:,2)',size(t,2), 1) + Tq.*(repmat(Q1(:,2)',size(t,2),1)-...
+% repmat(Q0(:,2)', size(t,2), 1));
+% Zq = repmat(Q0(:,3)',size(t,2), 1) + Tq.*(repmat(Q1(:,3)',size(t,2),1)-...
+% repmat(Q0(:,3)', size(t,2), 1)); 
+% figure;
+% plot3(Xp(:,imin),Yp(:,imin),Zp(:,imin),Xq(:,jmin),Yq(:,jmin),Zq(:,jmin));
+% hold on
+% plot3(Xcp(imin,jmin),Ycp(imin,jmin),Zcp(imin,jmin),'ro',Xcq(imin,jmin),Ycq(imin,jmin),Zcq(imin,jmin),'mo');
+% axis equal
+% grid on
+% xlabel('X'); ylabel('Y'); zlabel('Z');
+%
+% Revision history:
+% March 03, 2016 - created (Michael Yoshpe)
+%**************************************************************************
+% check inputs validity
+[mp0, np0] = size(P0);
+if(np0 ~=3 )
+   error('Array P0 should of size (m X 3)');
+end
+[mpl, npl] = size(P1);
+if((mpl ~= mp0) || (npl ~= np0))
+   error('P0 and Pl arrays must be of same size');
+end
+[mq0, nq0] = size(Q0);
+if(nq0 ~= 3)
+   error('Array Q0 should of size (n X 3)');
+end
+[mq1, nq1] = size(Q1);
+if((mq1 ~= mq0) || (nq1 ~= nq0))
+   error('Q0 and Ql arrays must be of same size');
+end
+u = P1 - P0; % vectors from P0 to P1
+uu = repmat(u,[1,1,mq0]);
+v = Q1 - Q0; % vectors from Q0 to Q1
+vv = permute(repmat(v,[1,1,mp0]), [3 2 1]);
+PP0 = repmat(P0,[1,1,mq0]);
+QQ0 = permute(repmat(Q0,[1,1,mp0]), [3 2 1]);
+w0 = PP0 - QQ0;
+aa = dot(uu,uu,2);
+bb = dot(uu,vv,2);
+cc = dot(vv,vv,2);
+dd = dot(uu,w0,2);
+ee = dot(vv,w0,2);
+ff = aa.*cc - bb.*bb;
+idx_par = (ff < 5*eps); % indices of parallel lines
+idx_nonpar = ~idx_par; % indices of non-parallel lines
+sc = NaN(mp0,1,mq0);
+tc = NaN(mp0,1,mq0);
+sc(idx_nonpar) = (bb(idx_nonpar).*ee(idx_nonpar) - ...
+                  cc(idx_nonpar).*dd(idx_nonpar))./ff(idx_nonpar);
+tc(idx_nonpar) = (aa(idx_nonpar).*ee(idx_nonpar) - ...
+                  bb(idx_nonpar).*dd(idx_nonpar))./ff(idx_nonpar);
+PPc = PP0 + repmat(sc, [1,3,1]).*uu;
+QQc = QQ0 + repmat(tc, [1,3,1]).*vv;
+Xcp = permute(PPc(:,1,:), [1 3 2]);
+Ycp = permute(PPc(:,2,:), [1 3 2]);
+Zcp = permute(PPc(:,3,:), [1 3 2]);
+Xcq = permute(QQc(:,1,:), [1 3 2]);
+Ycq = permute(QQc(:,2,:), [1 3 2]);
+Zcq = permute(QQc(:,3,:), [1 3 2]);
+% If there are parallel lines, find the distances  between them
+% Note, that for parallel lines, the closest points will be undefined
+% (will contain NaN's) 
+if(any(idx_par))
+   idx_par3 = repmat(idx_par, [1,3,1]); % logical indices
+   PPc(idx_par3) = PP0(idx_par3);
+   tmpl = repmat(dd(idx_par)./bb(idx_par), [1, 3, 1]);
+   tmp2 = vv(find(idx_par3));
+   
+   QQc(idx_par3) = QQ0(idx_par3) + tmpl(:).*tmp2;
+end
+PQc = (PPc - QQc);
+D = permute(sqrt(dot(PQc,PQc,2)), [1 3 2]);
+[Dmin, idx_min] = min(D(:));
+[imin,jmin] = ind2sub(size(D), idx_min);
+end
+
+% debug the cleaning of C (varargin in function)
 function [xoffSet,yoffSet] = imageCorrelation(xc,yc,ACC1,ACC2,w,filterOrder,varargin)
 % varargin: ,'cleanC',dxPass01,dyPass01,R);
 ACC1sub = zeros(w+1,w+1,'uint8');
@@ -669,3 +1052,7 @@ end
 yoffSet = ypeak-size(ACC1sub,1) + w;
 xoffSet = xpeak-size(ACC1sub,2) + w;
 end
+
+
+
+%%

@@ -17,8 +17,10 @@ session.output_path = session.input_path;
 analysisFolder = 'D:\pono\IFPEN\analysisExperiments\analysis_expe_20210311\analysis4DPTV';
 sessionPath = analysisFolder;                       % for 4D PTV
 
-%CalibFile = strcat('D:\pono\IFPEN\IFPEN_manips\expe_2021_02_16_calibration\',...
-%           'calibration_mcin2\images4_4DPTV\calib.mat');
+% CalibFile = strcat('D:\pono\IFPEN\IFPEN_manips\expe_2021_02_16_calibration\',...
+%            'calibration_mcin2\images4_4DPTV\calib.mat');
+CalibFile = strcat('D:\IFPEN\IFPEN_manips\expe_2021_04_22_calibration\for4DPTV\calib.mat');       
+       
 toc
 
 %%
