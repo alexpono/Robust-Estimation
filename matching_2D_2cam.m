@@ -672,7 +672,7 @@ end
 xlabel('x')
 ylabel('y')
 zlabel('z')
-axis([-300 300 -20 130 17 24])
+% axis([-300 300 -20 130 17 24])
 
 figure
 histogram(histx3D)
@@ -683,11 +683,7 @@ title('y')
 figure
 histogram(histz3D,[17:0.1:24])
 title('z')
-pause(2)
-%%
- clear P1 V1 P2 V2
-    [P1,V1]=findRaysDarcy02(CalibFile,x_pxC1,y_pxC1,Ttype)
-    [P2,V2]=findRaysDarcy02(CalibFile,x_pxC2,y_pxC2,Ttype)
+
 %%
 tic
 figure
