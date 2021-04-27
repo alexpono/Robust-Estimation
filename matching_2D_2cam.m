@@ -18,7 +18,7 @@
 close all
 clear all
 
-% CalibFile = strcat('D:\IFPEN\IFPEN_manips\expe_2021_04_22_calibration\for4DPTV\calib.mat');
+CalibFile = strcat('D:\IFPEN\IFPEN_manips\expe_2021_04_22_calibration\for4DPTV\calib.mat');
 % CalibFile = strcat('D:\IFPEN\IFPEN_manips\expe_2021_04_22_calibration\for4DPTV\calib.mat');
 
 him = 1152;
@@ -28,8 +28,8 @@ wim = 1152;
 
 %cd('C:\Users\Lenovo\Desktop\IFPEN\DL\for4DPTV\Processed_DATA\visu01_20210402T160947')
 %cd('C:\Users\Lenovo\Desktop\IFPEN\DL\for4DPTV\Processed_DATA\visu01_20210402T155814')
-%cd('D:\IFPEN\IFPEN_manips\expe_2021_04_20_beads\for4DPTV\Processed_DATA\expe65_20210420T172713')
-cd('C:\Users\Lenovo\Desktop\manip_20210420\expe65')
+cd('D:\IFPEN\IFPEN_manips\expe_2021_04_20_beads\for4DPTV\Processed_DATA\expe65_20210420T172713')
+%cd('C:\Users\Lenovo\Desktop\manip_20210420\expe65')
 CCtemp = load('centers_cam1.mat', 'CC');
 CC1 = CCtemp.CC;
 CCtemp = load('centers_cam2.mat', 'CC');
@@ -584,52 +584,110 @@ c = clock; fprintf('on croise les doigts at %0.2dh%0.2dm\n',c(4),c(5))
 
 Ttype = 'T1';
 tic
-%figure('defaultAxesFontSize',20), box on, hold on
+%h3D = figure('defaultAxesFontSize',20); box on, hold on
 
 
-for iP = 1 : length(structPotentialPairs) 
+for iP = 1 : 1 : length(structPotentialPairs) 
+    fprintf('progress: %0.0f / %0.0f',iP,length(structPotentialPairs) )
 if structPotentialPairs(iP).matched == 1
 itrj01 = structPotentialPairs(iP).trajCAM01;
 itrj02 = structPotentialPairs(iP).trajCAM02;
 
 clear x01 y01 x02 y02
-x01 = trajArray_CAM1(itrj01).track(:,1);
-y01 = trajArray_CAM1(itrj01).track(:,2);
-x02incam01 = trajArray_CAM2(itrj02).track(:,1); % ERROR--
-y02incam01 = trajArray_CAM2(itrj02).track(:,2); % ERROR--
+x01 = trajArray_CAM1(itrj01).track(structPotentialPairs(iP).tCAM01,1);
+y01 = trajArray_CAM1(itrj01).track(structPotentialPairs(iP).tCAM01,2);
+x02incam01 = trajArray_CAM2(itrj02).track(structPotentialPairs(iP).tCAM02,1);
+y02incam01 = trajArray_CAM2(itrj02).track(structPotentialPairs(iP).tCAM02,2);
 [ x02, y02] = transformPointsInverse(tform1,x02incam01,y02incam01);
 
 
 for ixy = 1 : length(x01)
     
+    x_pxC1 = x01(ixy);
+    y_pxC1 = y01(ixy);
+    x_pxC2 = x02(ixy);
+    y_pxC2 = y02(ixy);
     clear P1 V1 P2 V2
     [P1,V1]=findRaysDarcy02(CalibFile,x_pxC1,y_pxC1,Ttype);
     [P2,V2]=findRaysDarcy02(CalibFile,x_pxC2,y_pxC2,Ttype);
     
+    if size(P1,1) == 3
+        P1 = P1';
+    end
+    if size(P2,1) == 3
+        P2 = P2';
+    end
+    
+    if isempty(P1)
+        break
+    elseif isempty(P2)
+        break
+    end
     %lVBW = 1000; % length rays backward
     %lVFW = 1000; % length rays frontward
     
     %plot3(P1(1)+V1(1)*[-lVBW lVFW],P1(2)+V1(2)*[-lVBW lVFW],P1(3)+V1(3)*[-lVBW lVFW],'b-')
     %plot3(P2(1)+V2(1)*[-lVBW lVFW],P2(2)+V2(2)*[-lVBW lVFW],P2(3)+V2(3)*[-lVBW lVFW],'r-')
-    view(3)
+    %view(3)
     
     %closest point:
     clear lineA0 lineA1 lineB0 lineB1
-    lineA0 = P1';
-    lineA1 = (P1+V1')';
-    lineB0 = P2';
-    lineB1 = (P2+V2')';
+    lineA0 = P1;
+    lineA1 = (P1+V1);
+    lineB0 = P2;
+    lineB1 = (P2+V2);
     [D,Xcp,Ycp,Zcp,Xcq,Ycq,Zcq,Dmin,imin,jmin]= ll_dist3d(lineA0,lineA1,lineB0,lineB1);
     crossP = ([Xcp,Ycp,Zcp]+[Xcq,Ycq,Zcq])/2; % crossing oping
-    plot3(crossP(1),crossP(2),crossP(3),'og')
-    
+    % figure(h3D), hold on
+    % plot3(crossP(1),crossP(2),crossP(3),'og')
+    structPotentialPairs(iP).x3D(ixy) = crossP(1);
+    structPotentialPairs(iP).y3D(ixy) = crossP(2);
+    structPotentialPairs(iP).z3D(ixy) = crossP(3);
 end
 %axis([crossP(1)-10 crossP(1)+10 crossP(2)-10 crossP(2)+10 crossP(3)-10 crossP(3)+10])
 end
 end
-axis equal
+%axis equal
 toc
 c = clock; fprintf('rays crossed at %0.2dh%0.2dm\n',c(4),c(5))
+%%
+h3D = figure('defaultAxesFontSize',20); box on, hold on
+view(3)
+histx3D = [];
+histy3D = [];
+histz3D = [];
+for iP = 1 : length(structPotentialPairs)
+    if ~isempty(structPotentialPairs(iP).x3D)
+        clear x3D y3D z3D
+        x3D = structPotentialPairs(iP).x3D;
+        y3D = structPotentialPairs(iP).y3D;
+        z3D = structPotentialPairs(iP).z3D;
+        plot3(x3D,y3D,z3D,'-b')
+        
+        histx3D = [histx3D,x3D];
+        histy3D = [histy3D,y3D];
+        histz3D = [histz3D,z3D];
+    end
+end
+xlabel('x')
+ylabel('y')
+zlabel('z')
+axis([-300 300 -20 130 17 24])
+
+figure
+histogram(histx3D)
+title('x')
+figure
+histogram(histy3D)
+title('y')
+figure
+histogram(histz3D,[17:0.1:24])
+title('z')
+pause(2)
+%%
+ clear P1 V1 P2 V2
+    [P1,V1]=findRaysDarcy02(CalibFile,x_pxC1,y_pxC1,Ttype)
+    [P2,V2]=findRaysDarcy02(CalibFile,x_pxC2,y_pxC2,Ttype)
 %%
 tic
 figure
