@@ -1,5 +1,34 @@
 %% WORKFLOW ..
 
+cd('C:\Users\darcy\Desktop\git\Robust-Estimation')
+load('all_IFPEN_DARCY02_experiments.mat')
+
+%% STEP 0 - Defining paths using list of experiments stored in sturture allExpeStrct
+
+% iexpe = 1;
+% allExpeStrct(iexpe).name        = 'visu01_20210402T155814';
+% allExpeStrct(iexpe).inputFolder = ...
+%     strcat('D:\IFPEN\IFPEN_manips\expe_2021_04_02_withouBeads\');
+% allExpeStrct(iexpe).analysisFolder = ...
+%     strcat('D:\pono\IFPEN\analysisExperiments\analysis_expe_20210402\'); 
+% allExpeStrct(iexpe).CalibFile = ...
+%     strcat('D:\IFPEN\IFPEN_manips\expe_2021_02_16_calibration\',...
+%            'calibration_mcin2\images4_4DPTV\calib.mat');
+% allExpeStrct(iexpe).centerFinding_th = 1;
+% allExpeStrct(iexpe).centerFinding_sz = 1;
+
+allExpeStrct(iexpe).CalibFile
+fprintf('define folders and experiment name\n')
+nameExpe = allExpeStrct(iexpe).name;
+inputFolder = allExpeStrct(iexpe).inputFolder;
+outputFolder = strcat(inputFolder,'for4DPTV\DATA\',nameExpe);
+session.input_path = strcat(inputFolder,'for4DPTV\');
+session.output_path = session.input_path;
+analysisFolder = allExpeStrct(iexpe).analysisFolder;
+sessionPath = analysisFolder;                       % for 4D PTV
+CalibFile = allExpeStrct(iexpe).CalibFile;
+fprintf('defined folders and experiment name\n')
+
 %% STEP 0 - Defining paths 
 
 tic
@@ -23,7 +52,32 @@ CalibFile = strcat('D:\IFPEN\IFPEN_manips\expe_2021_04_22_calibration\for4DPTV\c
        
 toc
 
-%%
+
+%% STEP 0 - Defining paths _ experiment expe_20210217_re3_zaber825
+
+tic
+fprintf('define folders and experiment name\n')
+
+
+
+nameExpe = 'expe_20210217_re3_zaber825';
+inputFolder = 'D:\IFPEN\IFPEN_manips\expe_2021_02_17\';
+
+outputFolder = strcat(inputFolder,'for4DPTV\DATA\',nameExpe);
+
+session.input_path = strcat(inputFolder,'for4DPTV\');
+session.output_path = session.input_path;
+
+analysisFolder = 'D:\IFPEN\analysisExperiments\expe_20210217\';
+sessionPath = analysisFolder;                       % for 4D PTV
+
+% CalibFile = strcat('D:\pono\IFPEN\IFPEN_manips\expe_2021_02_16_calibration\',...
+%            'calibration_mcin2\images4_4DPTV\calib.mat');
+CalibFile = strcat('D:\IFPEN\IFPEN_manips\expe_2021_02_16_calibration\calibration_mcin2\images4_4DPTV\calib.mat');       
+       
+toc
+
+%% STEP 0 - Defining paths
 tic
 fprintf('define folders and experiment name\n')
 
@@ -39,7 +93,7 @@ sessionPath = analysisFolder;                       % for 4D PTV
 
 CalibFile = strcat('expe_20210216_calibration\calib.mat');
 toc
-%% papier déplacé à la main
+%%  STEP 0 - Defining paths - papier déplacé à la main
 tic
 fprintf('define folders and experiment name\n')
 
@@ -66,8 +120,8 @@ clear files
 files = struct();
 namesfiles = dir('*.mcin2');
 %%
-files(1).name = namesfiles(39).name;
-files(2).name = namesfiles(40).name;
+files(1).name = namesfiles(1).name;
+files(2).name = namesfiles(2).name;
 
 
 cd(outputFolder)
@@ -167,7 +221,7 @@ CamNum      = 1;
 firstFrame  = 1;
 nframes     = totalnFrames;
 th          = 1;
-sz          = 3; 
+sz          = 1; 
 test        = 1;
 %BackgroundType
 %format
@@ -201,11 +255,12 @@ c = clock; fprintf('started at %0.2dh%0.2dm\n',c(4),c(5))
 % session
 firstFrame  = 1;
 nframes     = totalnFrames;
-th          = 1;
-sz          = 3; 
+th          = allExpeStrct(iexpe).centerFinding_th;
+sz          = allExpeStrct(iexpe).centerFinding_sz; 
 test        = 0;
 %BackgroundType
 %format
+fprintf('with threshold at %0.0f and size part at %0.0f \n',th,sz) 
 
 CamNum  = 1;
 CC1 = CenterFinding2D(session,nameExpe,CamNum,firstFrame,nframes,th,sz); % for camera 1
@@ -248,141 +303,13 @@ end
 c = clock;
 sprintf('done plot at %0.2dh%0.2d',c(4),c(5))
 
-%% ROBUST ESTIMATION PART 01 - load CC1 and CC2
-% load CC:
-cd(session.output_path)
-cd('D:\pono\IFPEN\IFPEN_manips\expe_2021_03_11\for4DPTV\re01_20spatules\Processed_DATA\zaber_100mm_20spatules_16bit_20210311T153131')
-CCtemp = load('centers_cam1.mat', 'CC');
-CC1 = CCtemp.CC;
-CCtemp = load('centers_cam2.mat', 'CC');
-CC2 = CCtemp.CC;
-%%
-%removing the NaNs
-CC1_1P = CC1;
-ikill = [];
-for ip = 1 : size(CC1_1P(it).X,2)
-    if isnan(CC1_1P(it).X(ip)) || isnan(CC1_1P(it).Y(ip))
-        ikill = [ikill,ip];
-    end
-end
-CC1_1P(it).X(ikill) = [];
-CC1_1P(it).Y(ikill) = [];
-%% ROBUST ESTIMATION PART 01 - normxcorr2 - we build the images
-% normxcorr2(template,A)
-% fitgeotrans -> transformation type: 'affine'
-ACC1 = zeros(1152,1152,'uint8');
-ACC2 = zeros(1152,1152,'uint8');
-for it = 1 : totalnFrames
-    for ip = 1 : length(CC1(it).X)
-        xim1 = round(CC1(it).X(ip));
-        yim1 = round(CC1(it).Y(ip));
-        if isnan(xim1) || isnan(yim1)
-            continue
-        end
-        ACC1(yim1,xim1) = ACC1(yim1,xim1) + 5;
-    end
-        for ip = 1 : length(CC2(it).X)
-        xim2 = round(CC2(it).X(ip));
-        yim2 = round(CC2(it).Y(ip));
-        if isnan(xim2) || isnan(yim2)
-            continue
-        end
-        ACC2(yim2,xim2) = ACC1(yim2,xim2) + 5;
-    end
-end
-figure
-imagesc(ACC1)
-figure
-imagesc(ACC2)
-%% a code that could replace ginput, it finds potential correlation zones by itself
-close all 
-clear x4corr y4corr
-h0 = figure;
-imagesc(50*ACC1), colormap gray
 
-smoothFactor = 8;
-h1 = figure;
-ACC1gaussed = imgaussfilt(ACC1,smoothFactor);
-imagesc(ACC1gaussed)
-Localmax = imregionalmax(ACC1gaussed,8);
-h2 = figure;
-imagesc(Localmax)
-stats = regionprops(Localmax,'centroid','Area');
-% h3 = figure;
-% histogram([stats.Area],[0:50:5000])
 
-hold on
-icz = 0; % cz for correlation zone
-for is = 1 : size(stats,1)
-    if stats(is).Area > 250 || ACC1gaussed(round(stats(is).Centroid(2)),round(stats(is).Centroid(1))) > 1
-        icz = icz + 1;
-        x4corr(icz) = stats(is).Centroid(1);
-        y4corr(icz) = stats(is).Centroid(2);
-    end
-end
 
-figure(h0), hold on
-plot(x4corr,y4corr,'s')
-figure(h1), hold on
-plot(x4corr,y4corr,'sr')
-figure(h2), hold on
-plot(x4corr,y4corr,'s')
 
-%%
-figure
-imagesc(imgaussfilt(ACC2,3))
-%% ROBUST ESTIMATION PART 01 -  select the squares for matching 
-figure
-imshow(imgaussfilt(100-20*ACC1,1))
-% matching coordinates
-xm = [];
-ym = [];
-while(1)
-    clear x y
-    [x,y] = ginput(1);
-    if x<0
-        break
-    end
-    xm = [xm,x];
-    ym = [ym,y];
-    drawrectangle(gca,'Position',[x-w,y-w,2*w,2*w], ...
-            'FaceAlpha',0,'Color','b');
-end
-%% ROBUST ESTIMATION PART 01 -  normxcorr2 - we try to match CC1sub in CC2
-w = 200/2; % width correlating zone
-filterOrder = 10;
-clear xc yc 
-xc = 150;
-yc = 600;
-ACC1sub = zeros(w+1,w+1,'uint8');
-ACC1sub = ACC1(yc-w:yc+w,xc-w:xc+w);
-figure
-imagesc(ACC1sub)
 
-% figure
-% surf(C)
-% shading flat
 
-C = normxcorr2(imgaussfilt(ACC1sub,filterOrder),imgaussfilt(ACC2,filterOrder));
-figure
-imagesc(C)
-[ypeak,xpeak] = find(C==max(C(:)));
-yoffSet = ypeak-size(ACC1sub,1);
-xoffSet = xpeak-size(ACC1sub,2);
-hold on
-plot(xpeak,ypeak,'+r')
-%% ROBUST ESTIMATION PART 01 -  showing results
-figure
-imshow(20*ACC1)
-drawrectangle(gca,'Position',[xc-w,yc-w,2*w,2*w], ...
-    'FaceAlpha',0,'Color','b');
-figure
-imshow(20*ACC2)
-drawrectangle(gca,'Position',[xoffSet,yoffSet,size(ACC1sub,2),size(ACC1sub,1)], ...
-    'FaceAlpha',0,'Color','r');
 
-%%  ROBUST ESTIMATION PART 01 - 
-% 
 %%  STEP 5 - showing results of center finding - two cameras at same time
 c = clock;
 sprintf('doing plot at %0.2dh%0.2d',c(4),c(5))

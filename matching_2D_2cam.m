@@ -20,29 +20,36 @@
 % list of functions
 
 close all
-clear all
+% clear all
 
-CalibFile = strcat('D:\IFPEN\IFPEN_manips\expe_2021_04_22_calibration\for4DPTV\calib.mat');
-% CalibFile = strcat('D:\IFPEN\IFPEN_manips\expe_2021_04_22_calibration\for4DPTV\calib.mat');
+iexpe = 1;
+CalibFile = allExpeStrct(iexpe).CalibFile;
+cd(strcat(allExpeStrct(iexpe).inputFolder,'for4DPTV\Processed_DATA\',allExpeStrct(iexpe).name))
 
 him = 1152;
 wim = 1152;
+
 % load CC:
+
 % cd('D:\IFPEN\IFPEN_manips\expe_2021_03_11\for4DPTV\re01_20spatules\Processed_DATA\zaber_100mm_20spatules_16bit_20210311T153131')
 
+% CalibFile = strcat('D:\IFPEN\IFPEN_manips\expe_2021_04_22_calibration\for4DPTV\calib.mat');
 %cd('C:\Users\Lenovo\Desktop\IFPEN\DL\for4DPTV\Processed_DATA\visu01_20210402T160947')
 %cd('C:\Users\Lenovo\Desktop\IFPEN\DL\for4DPTV\Processed_DATA\visu01_20210402T155814')
-cd('D:\IFPEN\IFPEN_manips\expe_2021_04_20_beads\for4DPTV\Processed_DATA\expe65_20210420T172713')
+%cd('D:\IFPEN\IFPEN_manips\expe_2021_04_20_beads\for4DPTV\Processed_DATA\expe65_20210420T172713')
 %cd('C:\Users\Lenovo\Desktop\manip_20210420\expe65')
+
+clear CCtemp CC1 CC2 totalnFrames
+
 CCtemp = load('centers_cam1.mat', 'CC');
 CC1 = CCtemp.CC;
 CCtemp = load('centers_cam2.mat', 'CC');
 CC2 = CCtemp.CC;
 totalnFrames = size(CC1,2);
 
-CC1(501:end) = [];
-CC2(501:end) = [];
-totalnFrames = size(CC1,2);
+% CC1(501:end) = [];
+% CC2(501:end) = [];
+% totalnFrames = size(CC1,2);
 
 %% ROBUST ESTIMATION PART 1.1 removing the NaNs for all t
 for it = 1 : size(CC1,2)
@@ -80,6 +87,12 @@ for it = 1 : totalnFrames
         ACC2(yim2,xim2) = ACC1(yim2,xim2) + 255;
     end
 end
+
+hcam01 = figure;
+imagesc(20*ACC1)%, colormap gray
+
+hcam02 = figure;
+imagesc(20*ACC2)%, colormap gray
 %% ROBUST ESTIMATION PART 1.3 normxcorr2 pass 01 (on a large window) 
 %  -- adapted for visu01_20210402T160947
 
@@ -179,9 +192,9 @@ set(gcf,'position',[765    90   431   360]);
 
 %%  ROBUST ESTIMATION PART 1.3 normxcorr2 pass 02 (on a small window)
 
-wti = 250; % width template images
+wti = 300; % width template images
 wstep = 100; % step for sampling the image
-nPartMin = 200; % minimum number of particles to calculate the correlation
+nPartMin = 100; % minimum number of particles to calculate the correlation
 tmpl_IM_tStr = struct(); % structure storing information on template images
 
 % cut the image in a lot of small images
@@ -292,6 +305,7 @@ set(gcf,'position',[ 189         122        1058         858])
 
 %% ROBUST ESTIMATION PART 2.1 from BLP TRAJECTOIRE 2D
 tic
+clear part_cam1 part_cam2
 for it = 1 : size(CC1,2)
     part_cam1(it).pos(:,1) = [CC1(it).X]; % out_CAM1(:,1);
     part_cam1(it).pos(:,2) = [CC1(it).Y]; % out_CAM1(:,2);
@@ -317,6 +331,8 @@ toc
 
 sprintf('done')
 %% keep only long trajectories 
+
+ltraj = 5; % = 10
 clear ikill01 ikill02
 for itraj1 = 1 : length(trajArray_CAM1)
     lt1(itraj1) = size(trajArray_CAM1(itraj1).track,1) ; 
@@ -325,14 +341,14 @@ figure
 histogram(lt1,[0:2:1000])
 hold on
 plot(10*[1 1],[0 400],'--k')
-ikill01 = find(lt1<10);
+ikill01 = find(lt1<ltraj);
 
 for itraj2 = 1 : length(trajArray_CAM2)
     lt2(itraj2) = size(trajArray_CAM2(itraj2).track,1) ; 
 end
 figure
 histogram(lt2)
-ikill02 = find(lt2<10);
+ikill02 = find(lt2<ltraj);
 
 trajArray_CAM1(ikill01)=[];
 trajArray_CAM2(ikill02)=[];
@@ -578,11 +594,11 @@ end
 end
 toc
 ax = gca;
-ax.XLim = [480  725];
-ax.YLim = [185  510];
+%ax.XLim = [480  725];
+%ax.YLim = [185  510];
 set(gcf,'position',[680   117   990   861])
 c = clock; fprintf('done at %0.2dh%0.2dm\n',c(4),c(5))
-
+set(gca,'ydir','reverse')
 %% Crossing the rays
 c = clock; fprintf('on croise les doigts at %0.2dh%0.2dm\n',c(4),c(5))
 
@@ -594,7 +610,7 @@ calibTemp = load(CalibFile,'calib'); calib = calibTemp.calib;
 CalibFileCam1 = calib(:,1);
 CalibFileCam2 = calib(:,2);
 
-for iP = 1 : 25 : length(structPotentialPairs) 
+for iP = 1 : 1 : length(structPotentialPairs) 
     fprintf('progress: %0.0f / %0.0f \n',iP,length(structPotentialPairs) )
 if structPotentialPairs(iP).matched == 1
 itrj01 = structPotentialPairs(iP).trajCAM01;
@@ -677,6 +693,9 @@ for iP = 1 : length(structPotentialPairs)
         x3D = structPotentialPairs(iP).x3D;
         y3D = structPotentialPairs(iP).y3D;
         z3D = structPotentialPairs(iP).z3D;
+        if min(z3D) < 10
+            continue
+        end
         plot3(x3D,y3D,z3D,'-b')
         
         histx3D = [histx3D,x3D];
