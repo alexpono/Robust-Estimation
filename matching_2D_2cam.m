@@ -280,7 +280,7 @@ set(gcf,'position',[ 189         122        1058         858])
 %     pause(.1)
 %     axis([110 210 700 900])
 % end
-%%
+%% showing images before imwarp
 falseColorOverlay = imfuse( 1*ACC1, 1*ACC2);
 imshow( falseColorOverlay, 'initialMagnification', 'fit');
 set(gcf,'position',[ 189         122        1058         858])
@@ -476,7 +476,7 @@ end
 toc
 axis([0 1152 0 1152])
 c = clock; fprintf('done associating trajectories at %0.2dh%0.2dm\n',c(4),c(5))
-%%
+%% doing something on structPotentialPairs
 c = clock; fprintf('start at %0.2dh%0.2dm\n',c(4),c(5))
 tic
 % figure('defaultAxesFontSize',20), box on, hold on
@@ -586,9 +586,12 @@ Ttype = 'T1';
 tic
 %h3D = figure('defaultAxesFontSize',20); box on, hold on
 
+calibTemp = load(CalibFile,'calib'); calib = calibTemp.calib;
+CalibFileCam1 = calib(:,1);
+CalibFileCam2 = calib(:,2);
 
-for iP = 1 : 1 : length(structPotentialPairs) 
-    fprintf('progress: %0.0f / %0.0f',iP,length(structPotentialPairs) )
+for iP = 1 : 25 : length(structPotentialPairs) 
+    fprintf('progress: %0.0f / %0.0f \n',iP,length(structPotentialPairs) )
 if structPotentialPairs(iP).matched == 1
 itrj01 = structPotentialPairs(iP).trajCAM01;
 itrj02 = structPotentialPairs(iP).trajCAM02;
@@ -607,42 +610,16 @@ for ixy = 1 : length(x01)
     y_pxC1 = y01(ixy);
     x_pxC2 = x02(ixy);
     y_pxC2 = y02(ixy);
-    clear P1 V1 P2 V2
-    [P1,V1]=findRaysDarcy02(CalibFile,x_pxC1,y_pxC1,Ttype);
-    [P2,V2]=findRaysDarcy02(CalibFile,x_pxC2,y_pxC2,Ttype);
     
-    if size(P1,1) == 3
-        P1 = P1';
-    end
-    if size(P2,1) == 3
-        P2 = P2';
-    end
+    crossP = crossRaysonFire(CalibFileCam1,CalibFileCam2,x_pxC1,y_pxC1,x_pxC2,y_pxC2,Ttype);
     
-    if isempty(P1)
-        break
-    elseif isempty(P2)
-        break
-    end
-    %lVBW = 1000; % length rays backward
-    %lVFW = 1000; % length rays frontward
-    
-    %plot3(P1(1)+V1(1)*[-lVBW lVFW],P1(2)+V1(2)*[-lVBW lVFW],P1(3)+V1(3)*[-lVBW lVFW],'b-')
-    %plot3(P2(1)+V2(1)*[-lVBW lVFW],P2(2)+V2(2)*[-lVBW lVFW],P2(3)+V2(3)*[-lVBW lVFW],'r-')
-    %view(3)
-    
-    %closest point:
-    clear lineA0 lineA1 lineB0 lineB1
-    lineA0 = P1;
-    lineA1 = (P1+V1);
-    lineB0 = P2;
-    lineB1 = (P2+V2);
-    [D,Xcp,Ycp,Zcp,Xcq,Ycq,Zcq,Dmin,imin,jmin]= ll_dist3d(lineA0,lineA1,lineB0,lineB1);
-    crossP = ([Xcp,Ycp,Zcp]+[Xcq,Ycq,Zcq])/2; % crossing oping
+    if length(crossP)>0
     % figure(h3D), hold on
     % plot3(crossP(1),crossP(2),crossP(3),'og')
     structPotentialPairs(iP).x3D(ixy) = crossP(1);
     structPotentialPairs(iP).y3D(ixy) = crossP(2);
     structPotentialPairs(iP).z3D(ixy) = crossP(3);
+    end
 end
 %axis([crossP(1)-10 crossP(1)+10 crossP(2)-10 crossP(2)+10 crossP(3)-10 crossP(3)+10])
 end
@@ -650,6 +627,8 @@ end
 %axis equal
 toc
 c = clock; fprintf('rays crossed at %0.2dh%0.2dm\n',c(4),c(5))
+
+
 %%
 h3D = figure('defaultAxesFontSize',20); box on, hold on
 view(3)
@@ -681,7 +660,7 @@ figure
 histogram(histy3D)
 title('y')
 figure
-histogram(histz3D,[17:0.1:24])
+histogram(histz3D)
 title('z')
 
 %%
@@ -757,13 +736,67 @@ end
 imageCorrelation(xm,ym,ACC1,ACC2,round(wti/2),filterOrder,'cleanC',dxPass01,dyPass01,R)
 %% functions
 
-function [P,V]=findRaysDarcy02(CalibFile,x_px,y_px,Ttype)
+%% crossing the rays
+
+function crossP = crossRaysonFire(CalibFileCam1,CalibFileCam2,x_pxC1,y_pxC1,x_pxC2,y_pxC2,Ttype)
+
+% % plane 11
+% x_pxC1 = 396;
+% y_pxC1 = 899;
+% x_pxC2 = 994;
+% y_pxC2 = 899;
+% 
+% % plane 01
+% % x_pxC1 = 502;
+% % y_pxC1 = 878;
+% % x_pxC2 = 856;
+% % y_pxC2 = 877;
+
+
+[P1,V1]=findRaysDarcy02(CalibFileCam1,x_pxC1,y_pxC1,Ttype);
+[P2,V2]=findRaysDarcy02(CalibFileCam2,x_pxC2,y_pxC2,Ttype);
+
+
+if size(P1,1) == 0
+    crossP = []; 
+elseif size(P2,1) == 0
+    crossP = []; 
+else
+    
+if size(P1,1) == 3
+    P1 = P1';
+end
+if size(P2,1) == 3
+    P2 = P2';
+end
+
+if isempty(P1)
+    %break
+elseif isempty(P2)
+    %break
+end
+
+
+clear lineA0 lineA1 lineB0 lineB1
+lineA0 = P1;
+lineA1 = (P1+V1);
+lineB0 = P2;
+lineB1 = (P2+V2);
+[D,Xcp,Ycp,Zcp,Xcq,Ycq,Zcq,Dmin,imin,jmin]= ll_dist3d(lineA0,lineA1,lineB0,lineB1);
+crossP = ([Xcp,Ycp,Zcp]+[Xcq,Ycq,Zcq])/2; % crossing oping
+
+end
+
+end
+
+
+function [P,V]=findRaysDarcy02(calib,x_px,y_px,Ttype)
 %% calib : calibration data for this camera
 %% x_px  : x coordinates in px,
 %% y_px  : y coordinates in px,
 %% Ttype : type of the transformation to use (T1=Linear, T3=Cubic).
 
-calibTemp = load(CalibFile,'calib'); calib = calibTemp.calib;
+% calibTemp = load(CalibFile,'calib'); calib = calibTemp.calib;
 
 Npart = numel(x_px);
 Nplans = numel(calib);

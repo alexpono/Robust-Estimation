@@ -114,18 +114,22 @@ MakeCalibration_Vnotch(dirIn, zPlanes, camName, gridSpace, th, dotSize, lnoise, 
 
 %% STEP 4 - calib manip 2021 04 22
 dirIn  = 'D:\IFPEN\IFPEN_manips\expe_2021_04_22_calibration\for4DPTV\';
-zPlanes = [10:2:30]; % mm
+zPlanes = [10:2:28]; % mm
 camName = {1,2};
 dotSize = 40; % pixels
 th = 15; 
 
-gridSpace = 2*5;            % mm
+extension = 'tif';
+FirstPlane = 10;
+FirstCam   =  1;
+
+gridSpace = 5;            % mm
 lnoise = 1;
 blackDots = 0;
 %MakeCalibration_Vnotch(dirIn,zPlanes,camName,gridSpace,th,dotSize,lnoise,blackDots,extension,FirstPlane,FirstCam)
 % manip IFPEN
 cd(dirIn)
-MakeCalibration_Vnotch(dirIn, zPlanes, camName, gridSpace, th, dotSize, lnoise, blackDots)
+MakeCalibration_Vnotch(dirIn, zPlanes, camName, gridSpace, th, dotSize, lnoise, blackDots,extension,FirstPlane,FirstCam)
 
 %% STEP 5 - background images - part 01 - background images
 
