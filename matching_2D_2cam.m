@@ -1,5 +1,9 @@
 %% ROBUST ESTIMATION PART 01 - load CC1 and CC2
 
+
+% Testing crossing the rays with points on the calibration plate
+
+
 % normxcorr2(template,A)
 % normcxcorr finds where imageA is inside imageB. In our case, we select
 % a part of the image from cameraA and where it corresponds in the other
@@ -628,6 +632,38 @@ end
 toc
 c = clock; fprintf('rays crossed at %0.2dh%0.2dm\n',c(4),c(5))
 
+%% Testing crossing the rays with points on the calibration plate
+triangleMire = [
+    507.8330  878.5000   % mesuré à l'arrahce à la main
+    861.5000  873.8330   % mesuré à l'arrahce à la main
+    461.8330  886.8330   % mesuré à l'arrahce à la main
+    913.0000  881.0000   % mesuré à l'arrahce à la main
+    409.8330  897.8330   % mesuré à l'arrahce à la main
+    979.1670  891.1670]; % mesuré à l'arrahce à la main
+
+point_x_7p5mm_y_12p5mm = [
+    629.0000  478.0000 % mesuré à l'arrahce à la main
+    963.5000  490.1670 % mesuré à l'arrahce à la main
+    483.0190  787.4450 % mesuréé automatiquement avec ImageJ
+    917.5090  785.7350 % mesuréé automatiquement avec ImageJ
+    333.1020  488.5220 % mesuréé automatiquement avec ImageJ
+    894.9220  502.3680 % mesuréé automatiquement avec ImageJ
+    ];
+
+ip = 3;
+x_pxC1 = triangleMire(2*(ip-1)+1,1);
+y_pxC1 = triangleMire(2*(ip-1)+1,2);
+x_pxC2 = triangleMire(2*(ip-1)+2,1);
+y_pxC2 = triangleMire(2*(ip-1)+2,2);
+
+
+ip = 2;
+x_pxC1 = point_x_7p5mm_y_12p5mm(2*(ip-1)+1,1);
+y_pxC1 = point_x_7p5mm_y_12p5mm(2*(ip-1)+1,2);
+x_pxC2 = point_x_7p5mm_y_12p5mm(2*(ip-1)+2,1);
+y_pxC2 = point_x_7p5mm_y_12p5mm(2*(ip-1)+2,2);
+
+crossP = crossRaysonFire(CalibFileCam1,CalibFileCam2,x_pxC1,y_pxC1,x_pxC2,y_pxC2,Ttype)
 
 %%
 h3D = figure('defaultAxesFontSize',20); box on, hold on
