@@ -5,18 +5,19 @@ load('all_IFPEN_DARCY02_experiments.mat')
 
 %% STEP 0 - Defining paths using list of experiments stored in sturture allExpeStrct
 
-% iexpe = 1;
-% allExpeStrct(iexpe).name        = 'visu01_20210402T155814';
-% allExpeStrct(iexpe).inputFolder = ...
-%     strcat('D:\IFPEN\IFPEN_manips\expe_2021_04_02_withouBeads\');
-% allExpeStrct(iexpe).analysisFolder = ...
-%     strcat('D:\pono\IFPEN\analysisExperiments\analysis_expe_20210402\'); 
-% allExpeStrct(iexpe).CalibFile = ...
-%     strcat('D:\IFPEN\IFPEN_manips\expe_2021_02_16_calibration\',...
-%            'calibration_mcin2\images4_4DPTV\calib.mat');
-% allExpeStrct(iexpe).centerFinding_th = 1;
-% allExpeStrct(iexpe).centerFinding_sz = 1;
+iexpe = 2;
+allExpeStrct(iexpe).name        = 'run03_expe20210505';
+allExpeStrct(iexpe).inputFolder = ...
+    strcat('D:\IFPEN\IFPEN_manips\expe_2021_05_05\run03\');
+allExpeStrct(iexpe).analysisFolder = ...
+    strcat('D:\pono\IFPEN\analysisExperiments\analysis_expe_20210505\'); 
+allExpeStrct(iexpe).CalibFile = ...
+    strcat('D:\IFPEN\IFPEN_manips\expe_2021_02_16_calibration\',...
+           'calibration_mcin2\images4_4DPTV\calib.mat');
+allExpeStrct(iexpe).centerFinding_th = 1; % automatiser la définition de ces paramètres?
+allExpeStrct(iexpe).centerFinding_sz = 1; % automatiser la définition de ces paramètres?
 
+%%
 allExpeStrct(iexpe).CalibFile
 fprintf('define folders and experiment name\n')
 nameExpe = allExpeStrct(iexpe).name;
