@@ -9,6 +9,26 @@ cd('C:\Users\darcy\Desktop\git\Robust-Estimation')
 end
 load('all_IFPEN_DARCY02_experiments.mat')
 
+
+%% STEP 4 - calib manip 2021 04 22
+dirIn  = 'D:\IFPEN\IFPEN_manips\expe_2021_04_22_calibration\for4DPTV\';
+zPlanes = [10:2:28]; % mm
+camName = {1,2};
+dotSize = 40; % pixels
+th = 15; 
+
+extension = 'tif';
+FirstPlane = 10;
+FirstCam   =  1;
+
+gridSpace = 5;            % mm
+lnoise = 1;
+blackDots = 0;
+%MakeCalibration_Vnotch(dirIn,zPlanes,camName,gridSpace,th,dotSize,lnoise,blackDots,extension,FirstPlane,FirstCam)
+% manip IFPEN
+cd(dirIn)
+MakeCalibration_Vnotch(dirIn, zPlanes, camName, gridSpace, th, dotSize, lnoise, blackDots,extension,FirstPlane,FirstCam)
+
 %% STEP 0 - Defining paths using list of experiments stored in sturture allExpeStrct
 
 iexpe = 2;
@@ -42,6 +62,12 @@ CalibFile = strcat('D:\IFPEN\IFPEN_manips\expe_2021_04_22_calibration\for4DPTV\c
 fprintf('define folders and experiment name - DONE \n')
 
 %% load image sequence into vairable
+inputFolder = 'C:\Users\Lenovo\Jottacloud\RECHERCHE\Projets\21_IFPEN\manips\samplemcin2';
+cd(inputFolder)
+
+cd(inputFolder)
+listMcin2 = dir('*.mcin2');
+filename  = listMcin2(2).name;
 
 cd(inputFolder)
 [~,~,params]=mCINREAD2(filename,1,1);
@@ -51,27 +77,64 @@ totalnFrames = params.total_nframes;
 cd(inputFolder)
 [M,~,params]=mCINREAD2(filename,1,totalnFrames);
 
-%% STEP 4 - calib manip 2021 04 22
-dirIn  = 'D:\IFPEN\IFPEN_manips\expe_2021_04_22_calibration\for4DPTV\';
-zPlanes = [10:2:28]; % mm
-camName = {1,2};
-dotSize = 40; % pixels
-th = 15; 
-
-extension = 'tif';
-FirstPlane = 10;
-FirstCam   =  1;
-
-gridSpace = 5;            % mm
-lnoise = 1;
-blackDots = 0;
-%MakeCalibration_Vnotch(dirIn,zPlanes,camName,gridSpace,th,dotSize,lnoise,blackDots,extension,FirstPlane,FirstCam)
-% manip IFPEN
-cd(dirIn)
-MakeCalibration_Vnotch(dirIn, zPlanes, camName, gridSpace, th, dotSize, lnoise, blackDots,extension,FirstPlane,FirstCam)
-
+%% calculate mean image
+tic
+ImMean = uint8(mean(M,3));
+%ImMax = size(ImMean);
+ImMax  = max(M,[],3);
+toc
+figure
+imagesc(ImMean)
+figure
+imagesc(ImMax)
 %%
-
+Im01 = M - ImMean;
+imhist(Im01)
+%% determine particules positions
+th = 4;
+sz = 2;
+tic
+for it = 1 : size(M,3)
+    CC(it).xy = pkfnd(Im01(:,:,it),th,sz);
+end
+toc
+figure
+imagesc(Im01(:,:,500))
+hold on
+plot(CC(500).xy(:,1),CC(500).xy(:,2),'ob')
+%%
+clear CCall %= [];
+for it = 1 : size(M,3)
+    X = CC(it).xy(:,1);
+    Y = CC(it).xy(:,2);
+    T = it * ones(1,length(X));
+    if it == 1
+        CCall = [X,Y];
+        CCall(:,3) = [T];
+    else
+        CCtemp = [X,Y];
+        CCtemp(:,3) = [T];
+        CCall = [CCall;CCtemp];
+    end
+end
+%%
+tmin = 0001;
+tmax = 1000;
+colP = parula(tmax-tmin+1);
+ht = figure('defaultAxesFontSize',20); hold on, box on
+set(gca,'ydir','reverse')
+set(gcf,'position', [474    98   948   866])
+axis([0 1152 0 1152])
+h = patch('Faces',[1:4],'Vertices',[0 0;1152 0;1152 1152;0 1152]);
+h.FaceColor = [.1 .1 .1];
+h.EdgeColor = 'none';
+h.FaceAlpha = .8;
+for it = tmin : tmax
+    idxt = find(CCall(:,3)==it);
+    hp = plot(CCall(idxt,1),CCall(idxt,2),'ok',...
+        'MarkerEdgeColor','none','markerFaceColor',colP(it,:));
+    %pause(.1)
+end
 %% STEP 5 - ui figure that show images from the experiment and the CC displayed over it.
 
 %% STEP 5 - save image sequence with found CC marked on each image
