@@ -31,7 +31,9 @@ MakeCalibration_Vnotch(dirIn, zPlanes, camName, gridSpace, th, dotSize, lnoise, 
 
 %% STEP 0 - Defining paths using list of experiments stored in sturture allExpeStrct
 
-iexpe = 2;
+iexpe = 3;
+
+allExpeStrct(iexpe).type        = 'calibration';
 allExpeStrct(iexpe).name        = 'expe20210505_run03';
 allExpeStrct(iexpe).inputFolder = ...
     strcat('D:\IFPEN\IFPEN_manips\expe_2021_05_05\run03\');
@@ -206,51 +208,15 @@ htrck = plot(Xtck',Ytck','-','lineWidth',4);
 % ylim([yA yB])
 % 
 % clear xA yA xB yB
-%% STEP 5 - ui figure that show images from the experiment and the CC displayed over it.
 
-%% STEP 5 - save image sequence with found CC marked on each image
-camN = 1;
-tic
-is =    1;
-ie = 4000;
-for it = is : 1 : ie
-    fprintf('image : %0.0f/%0.0f \n',it,ie)
-    
-    
-    % read image
-    cd(strcat(session.input_path,'DATA\',nameExpe,'\',sprintf('cam%0.1d',camN)))
-    A = imread(strcat(nameExpe,sprintf('_cam%0.1d_%0.5d.tif',camN,it)));
-    ARGB = zeros(size(A,1),size(A,2),3,class(A));
-    ARGB(:,:,1) = A; ARGB(:,:,2) = A; ARGB(:,:,3) = A;
-    
-    
-    % add CC on it
-    for ip = 1 : length(CCtemp(it).X)
-        if isnan(round(CCtemp(it).X(ip))) || isnan(round(CCtemp(it).Y(ip)))
-            continue
-        end
-        for ib = [-5:1:5]
-            ARGB(max(min(round(CCtemp(it).Y(ip)) +  5,size(A,1)),1),...
-                 max(min(round(CCtemp(it).X(ip)) + ib,size(A,2)),1),3) = 255;
-            ARGB(max(min(round(CCtemp(it).Y(ip)) -  5,size(A,1)),1),...
-                 max(min(round(CCtemp(it).X(ip)) + ib,size(A,2)),1),3) = 255;
-            ARGB(max(min(round(CCtemp(it).Y(ip)) + ib,size(A,1)),1),...
-                 max(min(round(CCtemp(it).X(ip)) +  5,size(A,2)),1),3) = 255;
-            ARGB(max(min(round(CCtemp(it).Y(ip)) + ib,size(A,1)),1),...
-                 max(min(round(CCtemp(it).X(ip)) -  5,size(A,2)),1),3) = 255;
-        end
-    end
-    
-    
-    % save image
-    cd(strcat(session.output_path,'Processed_DATA\',nameExpe,...
-        '\checkingCenterFinding2d_imageSequences','\',sprintf('cam%0.1d',camN)))
-    imwrite(ARGB,strcat(nameExpe,sprintf('_cam1_%0.5d.png',it)))  
-end
 
-toc
-c = clock;
-fprintf('done at %0.2dh%0.2dm \n',c(4),c(5))
+
+
+
+
+
+
+
 
 
 %% STEP 6 - centers to rays - BLP
