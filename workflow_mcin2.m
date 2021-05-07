@@ -11,14 +11,14 @@ load('all_IFPEN_DARCY02_experiments.mat')
 
 
 %% STEP 4 - calib manip 2021 04 22
-dirIn  = 'D:\IFPEN\IFPEN_manips\expe_2021_04_22_calibration\for4DPTV\';
-zPlanes = [10:2:28]; % mm
+dirIn  = 'D:\IFPEN\IFPEN_manips\expe_2021_05_06_calibration\images4calibration\';
+zPlanes = [00:05:40]; % mm
 camName = {1,2};
-dotSize = 40; % pixels
-th = 15; 
+dotSize = 30; % pixels
+th = 60; 
 
 extension = 'tif';
-FirstPlane = 10;
+FirstPlane = 1;
 FirstCam   =  1;
 
 gridSpace = 5;            % mm
@@ -31,9 +31,9 @@ MakeCalibration_Vnotch(dirIn, zPlanes, camName, gridSpace, th, dotSize, lnoise, 
 
 %% STEP 0 - Defining paths using list of experiments stored in sturture allExpeStrct
 
-iexpe = 3;
+iexpe = 2;
 
-allExpeStrct(iexpe).type        = 'calibration';
+allExpeStrct(iexpe).type        = 'experiment';
 allExpeStrct(iexpe).name        = 'expe20210505_run03';
 allExpeStrct(iexpe).inputFolder = ...
     strcat('D:\IFPEN\IFPEN_manips\expe_2021_05_05\run03\');
@@ -41,9 +41,10 @@ allExpeStrct(iexpe).analysisFolder = ...
     strcat('D:\pono\IFPEN\analysisExperiments\analysis_expe_20210505\'); 
 allExpeStrct(iexpe).CalibFile = ...
     strcat('D:\IFPEN\IFPEN_manips\expe_2021_05_06_calibration\',...
-           'calibration_mcin2\images4_4DPTV\calib.mat');
-allExpeStrct(iexpe).centerFinding_th = 1; % automatiser la définition de ces paramètres?
-allExpeStrct(iexpe).centerFinding_sz = 1; % automatiser la définition de ces paramètres?
+           'images4calibration\calib.mat');
+       
+allExpeStrct(iexpe).centerFinding_th = 2; % automatiser la définition de ces paramètres?
+allExpeStrct(iexpe).centerFinding_sz = 2; % automatiser la définition de ces paramètres?
 
 %%
 fprintf('define folders and experiment name\n')
@@ -63,136 +64,18 @@ CalibFile = strcat('D:\IFPEN\IFPEN_manips\expe_2021_04_22_calibration\for4DPTV\c
     
 fprintf('define folders and experiment name - DONE \n')
 
-%% load image sequence into vairable
-fprintf('load image sequence \n')
-
-inputFolder = allExpeStrct(iexpe).inputFolder;
-cd(inputFolder)
-
-cd(inputFolder)
-listMcin2 = dir('*.mcin2');
-filename  = listMcin2(35).name;
-
-cd(inputFolder)
-[~,~,params]=mCINREAD2(filename,1,1);
-
-% save images as .tif image sequence
-totalnFrames = params.total_nframes;
-cd(inputFolder)
-[M,~,params]=mCINREAD2(filename,1,totalnFrames);
-
-fprintf('load image sequence - DONE \n')
-
-% calculate mean image
-tic
-ImMean = uint8(mean(M,3));
-%ImMax = size(ImMean);
-ImMax  = max(M,[],3);
-toc
-figure
-imagesc(ImMean)
-figure
-imagesc(ImMax)
-%
-Im01 = M - ImMean;
-imhist(Im01)
-%% determine particules positions
-th = 2;
-sz = 2;
-tic
-for it = 1 : size(M,3)
-    CC(it).xy = pkfnd(Im01(:,:,it),th,sz);
-end
-toc
-figure
-imagesc(Im01(:,:,1))
-hold on
-plot(CC(1).xy(:,1),CC(1).xy(:,2),'ob')
-%%
-clear CCall %= [];
-for it = 1 : size(M,3)
-    X = CC(it).xy(:,1);
-    Y = CC(it).xy(:,2);
-    T = it * ones(1,length(X));
-    if it == 1
-        CCall = [X,Y];
-        CCall(:,3) = [T];
-    else
-        CCtemp = [X,Y];
-        CCtemp(:,3) = [T];
-        CCall = [CCall;CCtemp];
-    end
-end
-%%
-tmin = 0001;
-tmax = size(M,3);
-colP = parula(tmax-tmin+1);
-ht = figure('defaultAxesFontSize',20); hold on, box on
-set(gca,'ydir','reverse')
-set(gcf,'position', [474    98   948   866])
-axis([0 1152 0 1152])
-h = patch('Faces',[1:4],'Vertices',[0 0;1152 0;1152 1152;0 1152]);
-h.FaceColor = [.1 .1 .1];
-h.EdgeColor = 'none';
-h.FaceAlpha = .8;
-for it = tmin : tmax
-    idxt = find(CCall(:,3)==it);
-    hp = plot(CCall(idxt,1),CCall(idxt,2),'ok',...
-        'MarkerEdgeColor','none','markerFaceColor',colP(it,:));
-    %pause(.1)
-end
-
-%% find tracks and stitch them
-tic
-clear trajArray_CAM1 tracks_CAM1 part_cam1
-for it = 1 : size(M,3)
-    idxt = find(CCall(:,3)==it);
-    part_cam1(it).pos(:,1) = [CCall(idxt,1)]; % out_CAM1(:,1);
-    part_cam1(it).pos(:,2) = [CCall(idxt,2)]; % out_CAM1(:,2);
-    part_cam1(it).pos(:,3) = ones(length([CCall(idxt,1)]),1)*it;
-    part_cam1(it).intensity = 0; %mI;
-end
+%% findTracks
 
 maxdist = 3;
 longmin = 5;
-[trajArray_CAM1,tracks_CAM1] = TAN_track2d(part_cam1,maxdist,longmin);
-% coluns of trajArray_CAM1 length(trajArray_CAM1) is n° of trajectories
-% column 1: X
-% column 2: Y
-% column 3: t
-% column 4: n° trajectory
-% column 5: state of particle: 0: free 1: not free  2: linked to two or
-% more other particles
-%
-% coluns of tracks_CAM1 length(tracks_CAM1) is n° of frames
-% column 1: X
-% column 2: Y
-% column 3: t
-% column 4: n° trajectory
-% column 5: state of particle: 0: free 1: not free  2: linked to two or
-% more other particles
-toc
+iexpe = 2;
+for iSeq = 35:35 % loop on images sequences
 
-%%
-clear Xtck Ytck tckSize
-Xtck = []; Ytck = []; tckSize = [];
-figure(ht), hold on
-tic
-for it = 1 : length(trajArray_CAM1)
-    tckSize(it) = length(trajArray_CAM1(it).track(:,1));
+[trajArray_CAM1,tracks_CAM1] = ...,
+    DARCY02_findTracks(allExpeStrct,iexpe,iSeq,maxdist,longmin);
+
 end
-toc
 
-Xtck = NaN(length(trajArray_CAM1),max(tckSize));
-Ytck = NaN(length(trajArray_CAM1),max(tckSize));
-
-for it = 1 : length(trajArray_CAM1)
-    Xtck(it,1:length(trajArray_CAM1(it).track(:,1))) = ...
-        trajArray_CAM1(it).track(:,1);
-    Ytck(it,1:length(trajArray_CAM1(it).track(:,1))) = ... 
-        trajArray_CAM1(it).track(:,2);
-end
-htrck = plot(Xtck',Ytck','-','lineWidth',4);
 %% temp
 % clear xA yA xB yB
 % figure(hFIJI)
@@ -507,8 +390,160 @@ StitchedTraj = Stitching(session,nameExpe,trackName,dfmax,dxmax,dvmax,lmin);
 
 
 
+%% FUNCTIONS 
+
 %%
 
+%%
 
+%%
+
+function [trajArray_CAM1,tracks_CAM1] = DARCY02_findTracks(allExpeStrct,iexpe,ifile,maxdist,longmin)
+
+fprintf('load image sequence \n')
+
+inputFolder = allExpeStrct(iexpe).inputFolder;
+cd(inputFolder)
+
+cd(inputFolder)
+listMcin2 = dir('*.mcin2');
+filename  = listMcin2(ifile).name;
+
+cd(inputFolder)
+[~,~,params] = mCINREAD2(filename,1,1);
+
+% save images as .tif image sequence
+totalnFrames = params.total_nframes;
+cd(inputFolder)
+[M,~,params]=mCINREAD2(filename,1,totalnFrames);
+
+fprintf('load image sequence - DONE \n')
+
+% calculate mean image
+tic
+ImMean = uint8(mean(M,3));
+%ImMax = size(ImMean);
+ImMax  = max(M,[],3);
+toc
+figure
+imagesc(ImMean)
+figure
+imagesc(ImMax)
+%
+Im01 = M - ImMean;
+imhist(Im01)
+
+%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%
+% determine particules positions
+th = allExpeStrct(iexpe).centerFinding_th;
+sz = allExpeStrct(iexpe).centerFinding_sz;
+tic
+for it = 1 : size(M,3)
+    CC(it).xy = pkfnd(Im01(:,:,it),th,sz);
+end
+toc
+figure
+imagesc(Im01(:,:,1))
+hold on
+plot(CC(1).xy(:,1),CC(1).xy(:,2),'ob')
+
+%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%
+clear CCall %= [];
+for it = 1 : size(M,3)
+    X = CC(it).xy(:,1);
+    Y = CC(it).xy(:,2);
+    T = it * ones(1,length(X));
+    if it == 1
+        CCall = [X,Y];
+        CCall(:,3) = [T];
+    else
+        CCtemp = [X,Y];
+        CCtemp(:,3) = [T];
+        CCall = [CCall;CCtemp];
+    end
+end
+
+%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%
+
+tmin = 0001;
+tmax = size(M,3);
+colP = parula(tmax-tmin+1);
+ht = figure('defaultAxesFontSize',20); hold on, box on
+set(gca,'ydir','reverse')
+set(gcf,'position', [474    98   948   866])
+axis([0 1152 0 1152])
+h = patch('Faces',[1:4],'Vertices',[0 0;1152 0;1152 1152;0 1152]);
+h.FaceColor = [.1 .1 .1];
+h.EdgeColor = 'none';
+h.FaceAlpha = .8;
+for it = tmin : tmax
+    idxt = find(CCall(:,3)==it);
+    hp = plot(CCall(idxt,1),CCall(idxt,2),'ok',...
+        'MarkerEdgeColor','none','markerFaceColor',colP(it,:));
+    %pause(.1)
+end
+
+%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%
+% find tracks and stitch them
+
+tic
+clear trajArray_CAM1 tracks_CAM1 part_cam1
+for it = 1 : size(M,3)
+    idxt = find(CCall(:,3)==it);
+    part_cam1(it).pos(:,1) = [CCall(idxt,1)]; % out_CAM1(:,1);
+    part_cam1(it).pos(:,2) = [CCall(idxt,2)]; % out_CAM1(:,2);
+    part_cam1(it).pos(:,3) = ones(length([CCall(idxt,1)]),1)*it;
+    part_cam1(it).intensity = 0; %mI;
+end
+
+% maxdist = 3;
+% longmin = 5;
+[trajArray_CAM1,tracks_CAM1] = TAN_track2d(part_cam1,maxdist,longmin);
+% coluns of trajArray_CAM1 length(trajArray_CAM1) is n° of trajectories
+% column 1: X
+% column 2: Y
+% column 3: t
+% column 4: n° trajectory
+% column 5: state of particle: 0: free 1: not free  2: linked to two or
+% more other particles
+%
+% coluns of tracks_CAM1 length(tracks_CAM1) is n° of frames
+% column 1: X
+% column 2: Y
+% column 3: t
+% column 4: n° trajectory
+% column 5: state of particle: 0: free 1: not free  2: linked to two or
+% more other particles
+toc
+
+%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%
+
+clear Xtck Ytck tckSize
+Xtck = []; Ytck = []; tckSize = [];
+figure(ht), hold on
+tic
+for it = 1 : length(trajArray_CAM1)
+    tckSize(it) = length(trajArray_CAM1(it).track(:,1));
+end
+toc
+
+Xtck = NaN(length(trajArray_CAM1),max(tckSize));
+Ytck = NaN(length(trajArray_CAM1),max(tckSize));
+
+for it = 1 : length(trajArray_CAM1)
+    Xtck(it,1:length(trajArray_CAM1(it).track(:,1))) = ...
+        trajArray_CAM1(it).track(:,1);
+    Ytck(it,1:length(trajArray_CAM1(it).track(:,1))) = ... 
+        trajArray_CAM1(it).track(:,2);
+end
+
+htrck = plot(Xtck',Ytck','-','lineWidth',4);
+
+end
 
 
