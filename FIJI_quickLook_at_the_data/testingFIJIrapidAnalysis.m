@@ -22,6 +22,7 @@ end
 
 %% find tracks and stitch them
 tic
+clear trajArray_CAM1 tracks_CAM1 part_cam1
 for it = 1 : 2000
     idxt = find(FIJI_test(:,3)==it);
     part_cam1(it).pos(:,1) = [FIJI_test(idxt,1)]; % out_CAM1(:,1);
@@ -101,8 +102,9 @@ for it = 1 : length(trajArray_CAM1)
     Ytck(it,1:length(trajArray_CAM1(it).track(:,1))) = ... 
         trajArray_CAM1(it).track(:,2);
 end
-%%
 htrck = plot(Xtck',Ytck','-','lineWidth',4);
+%%
+
 
 
 %%
