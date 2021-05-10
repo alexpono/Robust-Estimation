@@ -1,5 +1,21 @@
-cd('C:\Users\darcy\Desktop\havingFun')
+
+
+
+%%
+
+% detect the computer and load all_IFPEN_DARCY02_experiments
+name = getenv('COMPUTERNAME');
+if strcmp(name,'DESKTOP-3ONLTD9')
+    cd('C:\Users\Lenovo\Jottacloud\RECHERCHE\Projets\21_IFPEN\git\Robust-Estimation\FIJI_quickLook_at_the_data')
+elseif strcmp(name,'DARCY')
+    cd('C:\Users\darcy\Desktop\havingFun')
+end
+
+
+
 load('FIJI_test.mat')
+
+
 %%
 tmin = 0001;
 tmax = 2000;
