@@ -63,10 +63,10 @@ allTraj = struct();
 maxdist = allExpeStrct(iexpe).maxdist;
 longmin = allExpeStrct(iexpe).longmin;
 c1 = clock;
-for iSeq = 35 : 36 % loop on images sequences
+for iSeq = 37% : 36 % loop on images sequences
 clear trajArray_loc tracks_loc CCout
 [trajArray_loc,tracks_loc,CCout] = ...,
-    DARCY02_findTracks(allExpeStrct,iexpe,iSeq,maxdist,longmin,'figures','no');
+    DARCY02_findTracks(allExpeStrct,iexpe,iSeq,maxdist,longmin,'figures','yes');
 allTraj(iSeq).trajArray = trajArray_loc;
 allTraj(iSeq).tracks    = tracks_loc;
 allTraj(iSeq).CC        = CCout;
@@ -1225,7 +1225,7 @@ switch dofigures
             Ytck(it,1:length(trajArray_CAM1(it).track(:,1))) = ...
                 trajArray_CAM1(it).track(:,2);
         end
-        htrck = plot(Xtck',Ytck','-','lineWidth',4);
+        % htrck = plot(Xtck',Ytck','-','lineWidth',4);
 end
 %%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%
