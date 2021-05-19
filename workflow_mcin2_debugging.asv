@@ -38,27 +38,24 @@ listNames = dir('*.tif');
 A = imread(listNames(1).name);
 [h,w] = size(A);
 hP = figure; % progress in the calibration
-Aminimap = zeros(h*length(listNames)/2,2*w,'uint8');
+Aminimap = zeros(2*w,h*length(listNames)/2,'uint8');
 for iim = 1 : length(listNames)
-    xs = 1+rem(iim+1,2)*w;
-    xe = xs + w - 1;
-    ys = 1+floor((iim-1)/2)*h;
-    ye = ys + h - 1;
-    fprintf('iim: %0.2d, xs: %0.4d, xe: %0.4d, ys: %0.4d, ye: %0.4d, \n',...
-             iim,xs,xe,ys,ye)
-   A = imread(listNames(iim).name);
-   Aminimap(ys:ye,xs:xe) = A(:,:);
+    xs = 1+rem(iim+1,2);
+    xe = xs + w;
+    ys = 1+rem(iim+1,2);
+    ye = ys + ;
+    fprintf('xs: %0.2d, xe: ys: ye: \n')
+    A = imread(listNames(iim).name);
+    Aminimap(:,:) = A(:,:);
 end
-imshow(Aminimap)
-set(gcf,'position',[ 16    48   366   942])
 %%
 for i = 1 : 1
     
     A = imread(listNames(1).name);
+    imshow(A>30)
     T = adaptthresh(imgaussfilt(A,2),0.3);
     BW = imbinarize(imgaussfilt(A,2),T);
     imshow(BW), hold on
-    set(gcf,'position',[400 48 900 900])
     stats = regionprops(BW,'Centroid','Area');
     clear iKill Xst Yst
     iKill = find([stats.Area] < 500);
@@ -73,19 +70,11 @@ for i = 1 : 1
         % find the stats point corresponding
         d = sqrt((x-Xst).^2+(y-Yst).^2);
         [a,b] = min(d);
-        mirePoints(iBase).e1 = rem(iBase+1,2);
-        mirePoints(iBase).e2 = floor((iBase+0)/3);
+        mirePoints(iBase).e1 = 0;
+        mirePoints(iBase).e2 = 0;
         mirePoints(iBase).is = b;
-        plot(Xst(b),Yst(b),'bo','markerFaceColor','b')
+        plot(Xst(b),Yst(b),'b+')
     end
-    % use the base to find all other points
-    % propagate along e1 axis 
-%     while(1)
-%         x = 
-%         y
-%     end
-    
-    % update minimap
 end
 
 %%
