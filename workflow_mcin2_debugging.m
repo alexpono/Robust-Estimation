@@ -60,14 +60,14 @@ imshow(Aminimap)
 set(gcf,'position',[ 16    48   366   942])
 
 dataAllImages = struct();
-for i = 1 : 19
+for i = 1 : 18
     iloooop = i;
     A = imread(listNames(i).name);
     T = adaptthresh(imgaussfilt(A,1),0.3);
     BW = imbinarize(imgaussfilt(A,2),T);
     hBW = figure; hold on
     imshow(A), hold on
-    title(sprintf('plane %0.2d / %0.2d , camera %0.1d',1+floor((i-1)/2),1+rem(i+1,2)))
+    title(sprintf('triangle tneh square -- plane %0.2d / 09 , camera %0.1d',1+floor((i-1)/2),1+rem(i+1,2)))
     set(gcf,'position',[400 48 900 900])
     stats = regionprops(BW,'Centroid','Area','boundingbox','perimeter','convexHull');
     clear iKill Xst Yst
@@ -279,7 +279,9 @@ end
 for idai = 1 % index data all images
     
     mirePoints = dataAllImages(idai).mirePoints;
-    
+    PNpimg(1:length(mirePoints),1) = [mirePoints.xpix];
+    PNpimg(1:length(mirePoints),2) = [mirePoints.ypix];
+    PNpimg = sortrows(PNpimg,1);
 end
 %%
 
