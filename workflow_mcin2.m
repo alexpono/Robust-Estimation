@@ -1,5 +1,7 @@
 %% WORKFLOW ..
 
+clear all, close all
+
 % detect the computer and load all_IFPEN_DARCY02_experiments
 name = getenv('COMPUTERNAME');
 if strcmp(name,'DESKTOP-3ONLTD9')
@@ -48,7 +50,9 @@ allExpeStrct(iexpe).analysisFolder = ...
 allExpeStrct(iexpe).CalibFile = ...
     strcat('D:\IFPEN\IFPEN_manips\expe_2021_05_06_calibration\',...
            'images4calibration\calib.mat');
-       
+allExpeStrct(iexpe).CalibFile = ...
+    strcat('D:\IFPEN\IFPEN_manips\expe_2021_05_06_calibration\',...
+           'reorderCalPlanes4test\calib.mat');
 allExpeStrct(iexpe).centerFinding_th = 2; % automatiser la définition de ces paramètres?
 allExpeStrct(iexpe).centerFinding_sz = 2; % automatiser la définition de ces paramètres?
 allExpeStrct(iexpe).maxdist = 3;          % for Benjamin tracks function: 
@@ -63,9 +67,9 @@ allTraj = struct();
 maxdist = allExpeStrct(iexpe).maxdist;
 longmin = allExpeStrct(iexpe).longmin;
 c1 = clock;
-for iSeq = 37% : 36 % loop on images sequences
+for iSeq = 36% : 36 % loop on images sequences
 clear trajArray_loc tracks_loc CCout
-[trajArray_loc,tracks_loc,CCout] = ...,
+[trajArray_loc,tracks_loc,CCout,M] = ...,
     DARCY02_findTracks(allExpeStrct,iexpe,iSeq,maxdist,longmin,'figures','yes');
 allTraj(iSeq).trajArray = trajArray_loc;
 allTraj(iSeq).tracks    = tracks_loc;
@@ -75,7 +79,9 @@ end
 c2 = clock;
 e = etime(c2,c1)
 fprintf('done \n')
-
+%% TEMP
+figure, hold on
+imagesc(uint8(max(M,[],3))), colormap gray
 %% start robust estimation -> croiser les rayons
 
 
@@ -575,8 +581,8 @@ h3D = figure('defaultAxesFontSize',20); box on, hold on, view(3)
 xlabel('x'), ylabel('y'), zlabel('z')
 
 calibTemp = load(CalibFile,'calib'); calib = calibTemp.calib;
-CalibFileCam1 = calib(:,2);
-CalibFileCam2 = calib(:,1);
+CalibFileCam1 = calib(:,1);
+CalibFileCam2 = calib(:,2);
 
 for iP = 1 : 1 : 100%length(structPotentialPairs) 
     fprintf('progress: %0.0f / %0.0f \n',iP,length(structPotentialPairs) )
@@ -616,6 +622,73 @@ end
 %axis equal
 toc
 c = clock; fprintf('rays crossed at %0.2dh%0.2dm\n',c(4),c(5))
+
+%%
+x_pxC1 = 440;
+y_pxC1 = 546;
+x_pxC2 = 528;
+y_pxC2 = 533;
+
+cd('D:\IFPEN\IFPEN_manips\expe_2021_05_06_calibration\images4calibration')
+listNames = dir('*.tif');
+ip = 3;
+for ic = 1 : 2
+    A = imread(listNames(ip+ic-1).name);
+    [hIm,wIm] = size(A);
+    T = adaptthresh(imgaussfilt(A,1),0.3);
+    BW = imbinarize(imgaussfilt(A,2),T);
+    hBW = figure; hold on
+    imshow(A), hold on
+    set(gcf,'position',[400 48 900 900])
+    stats = regionprops(BW,'Centroid','Area','boundingbox','perimeter','convexHull');
+    clear iKill Xst Yst
+    iKill = find([stats.Area] < 500);
+    stats(iKill) = [];
+    clear iKill
+    iKill = [];
+    for is = 1 : length(stats)
+        Xc = stats(is).Centroid(1,1);
+        Yc = stats(is).Centroid(1,2);
+        if (Xc < 50) || (Xc > (wIm-50)) || (Yc < 50) || (Yc > (hIm-50))
+            iKill = [iKill,is];
+        end
+    end
+    stats(iKill) = [];
+    
+    for is = 1 : length(stats)
+        Xst(is) = stats(is).Centroid(1,1);
+        Yst(is) = stats(is).Centroid(1,2);
+        plot(stats(is).Centroid(1,1),stats(is).Centroid(1,2),'+r')
+    end
+    % ginput for choosing one point
+    [xgi,ygi] = ginput(1);
+    for is = 1 : length(stats)
+        Xst(is) = stats(is).Centroid(1,1);
+        Yst(is) = stats(is).Centroid(1,2);
+    end
+    d = sqrt((xgi-Xst).^2+(ygi-Yst).^2);
+    [a,b] = min(d);
+    if ic == 1
+        ip1 = b;
+        hold on 
+        plot(Xst(ip1),Yst(ip1),'ob')
+    else
+        ip2 = b;  
+        hold on 
+        plot(Xst(ip2),Yst(ip2),'ob')
+    end
+end
+x_pxC1 = Xst(ip1);
+y_pxC1 = Yst(ip1);
+x_pxC2 = Xst(ip2);
+y_pxC2 = Yst(ip2);
+%% JE SUIS ICI
+[P,V,XYZ]=findRaysDarcy02(CalibFileCam1,x_pxC1,y_pxC1,Ttype)
+[P,V,XYZ]=findRaysDarcy02(CalibFileCam2,x_pxC2,y_pxC2,Ttype)
+%%
+Ttype  = 'T1';
+crossP = crossRaysonFire(CalibFileCam1,CalibFileCam2,x_pxC1,y_pxC1,x_pxC2,y_pxC2,Ttype);
+crossP
 
 %% Testing crossing the rays with points on the calibration plate
 triangleMire = [
@@ -1074,9 +1147,9 @@ StitchedTraj = Stitching(session,nameExpe,trackName,dfmax,dxmax,dvmax,lmin);
 %%
 
 
-%%
+%% DARCY02_findTracks
 
-function [trajArray_CAM1,tracks_CAM1,CCout] = DARCY02_findTracks(allExpeStrct,iexpe,ifile,maxdist,longmin,varargin)
+function [trajArray_CAM1,tracks_CAM1,CCout,M] = DARCY02_findTracks(allExpeStrct,iexpe,ifile,maxdist,longmin,varargin)
 
 % 1. load image
 % 2. subtract mean of the image sequence
@@ -1233,6 +1306,7 @@ end
 
 end
 
+%% crossRaysonFire
 function crossP = crossRaysonFire(CalibFileCam1,CalibFileCam2,x_pxC1,y_pxC1,x_pxC2,y_pxC2,Ttype)
 
 % % plane 11
@@ -1284,7 +1358,8 @@ end
 
 end
 
-function [P,V]=findRaysDarcy02(calib,x_px,y_px,Ttype)
+%% findRaysDarcy02
+function [P,V,XYZ]=findRaysDarcy02(calib,x_px,y_px,Ttype)
 %%% calib : calibration data for this camera
 %%% x_px  : x coordinates in px,
 %%% y_px  : y coordinates in px,
@@ -1320,6 +1395,7 @@ end
     
 end
 
+%% fit3Dline
 function [xyz0,direction] = fit3Dline(XYZ)
 
 if max(max(max(isnan(XYZ)))) ==0
@@ -1335,7 +1411,7 @@ end
 
 end
 
-
+%% TAN_fit3Dline
 function [P,V]=TAN_fit3Dline(XYZ)
 %%-------------------------------------------------------------------------
 %%computes the line of best fit (in the least square sense) for points in 
@@ -1368,6 +1444,7 @@ V = squeeze(Vac(:,1,:))'; %in matlab the singular values are listed in decreasin
 
 end
 
+%% fit3Dline_nan
 function [xyz0,direction]=fit3Dline_nan(XYZ)
 %%% [xyz0,direction]=fit3Dline_jv(XYZ)
 %
@@ -1408,6 +1485,7 @@ end
 %line = [xyz0'  direction];
 end
 
+%% fit3Dline_nonan
 function [xyz0,direction]=fit3Dline_nonan(XYZ)
 
 % @JVessaire 01/2019
@@ -1426,6 +1504,7 @@ direction=cat(2,dd{:})'; clear dd Vac A;
 
 end
 
+%% ll_dist3d
 function [D,Xcp,Ycp,Zcp,Xcq,Ycq,Zcq,Dmin,imin,jmin]= ll_dist3d(P0,P1,Q0,Q1)
 %ll_dist3d - Find the distances between each pair of straight 3D lines in
 % two sets. Find the closest points on each pair, and the pair with minimum
@@ -1564,6 +1643,7 @@ D = permute(sqrt(dot(PQc,PQc,2)), [1 3 2]);
 [imin,jmin] = ind2sub(size(D), idx_min);
 end
 
+%% imageCorrelation
 % debug the cleaning of C (varargin in function)
 function [xoffSet,yoffSet] = imageCorrelation(xc,yc,ACC1,ACC2,w,filterOrder,varargin)
 % varargin: ,'cleanC',dxPass01,dyPass01,R);
