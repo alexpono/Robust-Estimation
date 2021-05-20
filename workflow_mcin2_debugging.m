@@ -7,7 +7,7 @@ if strcmp(name,'DESKTOP-3ONLTD9')
     cd(strcat('C:\Users\Lenovo\Jottacloud\RECHERCHE\Projets\21_IFPEN\',...
         'manips\expe_2021_05_06_calibration_COPY\images4calibration'))
 elseif strcmp(name,'DARCY')
-    cd('D:\IFPEN\IFPEN_manips\expe_2021_05_06_calibration\reorderCalPlanes4test')
+    cd('D:\IFPEN\IFPEN_manips\expe_2021_05_20_calibration_air\forCalib')
 end
 %% modify the names of the calibration pictures
 
@@ -60,21 +60,36 @@ imshow(Aminimap)
 set(gcf,'position',[ 16    48   366   942])
 
 dataAllImages = struct();
-for i = 1 : 18
+for i = 1 : length(listNames)
+    clear  mirePoints
+    mirePoints = struct();
     iloooop = i;
     A = imread(listNames(i).name);
     T = adaptthresh(imgaussfilt(A,1),0.3);
     BW = imbinarize(imgaussfilt(A,2),T);
     hBW = figure; hold on
-    imshow(A), hold on
-    title(sprintf('triangle tneh square -- plane %0.2d / 09 , camera %0.1d',...
+    imagesc(256-A), colormap gray, hold on, box on
+    axis([0 hIm 0 wIm])
+    set(gca,'ydir','reverse')
+    title(sprintf('triangle then square -- plane %0.2d / 09 , camera %0.1d',...
         1+floor((i-1)/2),1+rem(i+1,2)))
     set(gcf,'position',[400 48 900 900])
     stats = regionprops(BW,'Centroid','Area','boundingbox','perimeter','convexHull');
     clear iKill Xst Yst
     iKill = find([stats.Area] < 500);
     stats(iKill) = [];
-    
+    clear iKill
+    iKill = find([stats.Area] > 2000);
+    stats(iKill) = [];
+    clear iKill
+    iKill = [];
+    for is = 1 : length(stats)
+        as = stats(is).BoundingBox(3)/stats(is).BoundingBox(4); % aspect ratio
+        if  as > 2 || as < 0.5
+            iKill = [iKill,is];
+        end
+    end
+    stats(iKill) = [];
     clear iKill
     iKill = [];
     for is = 1 : length(stats)
@@ -89,68 +104,93 @@ for i = 1 : 18
     for is = 1 : length(stats)
         Xst(is) = stats(is).Centroid(1,1);
         Yst(is) = stats(is).Centroid(1,2);
-        plot(stats(is).Centroid(1,1),stats(is).Centroid(1,2),'+r')
+        %plot(stats(is).Centroid(1,1),stats(is).Centroid(1,2),'+r')
     end
 
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % find square and triangle
-for is = 1 : length(stats)
-
-% same as dCCH but more smooth
-poly1 = simplify(polyshape([stats(is).ConvexHull(:,1)],[stats(is).ConvexHull(:,2)],'Simplify',false));
-xCC = stats(is).Centroid(1,1);
-yCC = stats(is).Centroid(1,2);
-for itheta = 1 : 360
-    lineseg = [[xCC yCC];...
-               [xCC+400*cosd(itheta) yCC+400*sind(itheta)]];
-    [in,out] = intersect(poly1,lineseg);
-    xCH = in(end,1);
-    yCH = in(end,2);
-    dCCHBetter(itheta) = sqrt((xCC-xCH)^2+(yCC-yCH)^2);% distance center form to convexhull
-end
-stats(is).dCCHBetter = dCCHBetter;
-stats(is).VdCC = var(dCCHBetter);
-[~,~,w,p] = findpeaks(dCCHBetter,[1:1:length(dCCHBetter)],'SortStr','descend');
-stats(is).w = w;
-stats(is).wsum = sum(w);
-stats(is).p = p;
-stats(is).psum = sum(p);
-end
-
+% for is = 1 : length(stats)
+% 
+% % same as dCCH but more smooth
+% poly1 = simplify(polyshape([stats(is).ConvexHull(:,1)],[stats(is).ConvexHull(:,2)],'Simplify',false));
+% xCC = stats(is).Centroid(1,1);
+% yCC = stats(is).Centroid(1,2);
+% for itheta = 1 : 360
+%     lineseg = [[xCC yCC];...
+%                [xCC+400*cosd(itheta) yCC+400*sind(itheta)]];
+%     [in,out] = intersect(poly1,lineseg);
+%     xCH = in(end,1);
+%     yCH = in(end,2);
+%     dCCHBetter(itheta) = sqrt((xCC-xCH)^2+(yCC-yCH)^2);% distance center form to convexhull
+% end
+% stats(is).dCCHBetter = dCCHBetter;
+% stats(is).VdCC = var(dCCHBetter);
+% [~,~,w,p] = findpeaks(dCCHBetter,[1:1:length(dCCHBetter)],'SortStr','descend');
+% stats(is).w = w;
+% stats(is).wsum = sum(w);
+% stats(is).p = p;
+% stats(is).psum = sum(p);
+% end
 
 
 % criterion for square and triangle
-
 % figure, hold on
 % plot([stats.psum],[stats.VdCC],'o')
 % xlabel('p')
 % ylabel('variance')
 % box on
-
 % here I tried automatic finding of the square and the triangle, but it
 % does not always work
-[~,b] = maxk([stats.VdCC],2);
-[~,c] = max( [stats(b(1)).psum , stats(b(2)).psum ] );
-iTrgl = b(c);
-iSqr  = b(3-c);
+% [~,b] = maxk([stats.VdCC],2);
+% [~,c] = max( [stats(b(1)).psum , stats(b(2)).psum ] );
+% iTrgl = b(c);
+% iSqr  = b(3-c);
 
-% ginput for square and triangle
-[xgi,ygi] = ginput(1);
+% % ginput for square and triangle
+% [xgi,ygi] = ginput(1);
+% for is = 1 : length(stats)
+%     Xst(is) = stats(is).Centroid(1,1);
+%     Yst(is) = stats(is).Centroid(1,2);
+% end
+% d = sqrt((xgi-Xst).^2+(ygi-Yst).^2);
+% [a,b] = min(d);
+% iTrgl = b;
+% [xgi,ygi] = ginput(1);
+% for is = 1 : length(stats)
+%     Xst(is) = stats(is).Centroid(1,1);
+%     Yst(is) = stats(is).Centroid(1,2);
+% end
+% d = sqrt((xgi-Xst).^2+(ygi-Yst).^2);
+% [a,b] = min(d);
+% iSqr = b;
+
+% try to automatic finding the triangle and square
+clear Xst Yst
 for is = 1 : length(stats)
     Xst(is) = stats(is).Centroid(1,1);
     Yst(is) = stats(is).Centroid(1,2);
 end
-d = sqrt((xgi-Xst).^2+(ygi-Yst).^2);
-[a,b] = min(d);
-iTrgl = b;
-[xgi,ygi] = ginput(1);
-for is = 1 : length(stats)
-    Xst(is) = stats(is).Centroid(1,1);
-    Yst(is) = stats(is).Centroid(1,2);
+% find the two guys who have the four closest neighbourgs
+ddd = sqrt((Xst'-Xst).^2+(Yst'-Yst).^2);
+ii=ones(size(ddd));
+%idx=triu(ii,1);
+%ddd(~idx)=nan;
+idx = logical( diag(ones(size(ddd,1),1)) );
+ddd(~(~idx)) = nan;
+B = sum(mink(ddd,4));
+[~,b] = mink(B,2);
+if stats(b(1)).Area < stats(b(2)).Area
+    iTrgl = b(1);
+    iSqr  = b(2);
+else
+    iTrgl = b(2);
+    iSqr  = b(1);
 end
-d = sqrt((xgi-Xst).^2+(ygi-Yst).^2);
-[a,b] = min(d);
-iSqr = b;
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%    
 polyTrgl = simplify(polyshape([stats(iTrgl).ConvexHull(:,1)],[stats(iTrgl).ConvexHull(:,2)],'simplify',false));
 hpg1 = plot(polyTrgl,'FaceColor',[0.4940 0.1840 0.5560],'FaceAlpha',.5);
 polySqr  = simplify(polyshape([stats(iSqr).ConvexHull(:,1)],[stats(iSqr).ConvexHull(:,2)],'simplify',false));
@@ -164,20 +204,21 @@ yTg = stats(iTrgl).Centroid(1,2);
 xSq = stats(iSqr).Centroid(1,1);
 ySq = stats(iSqr).Centroid(1,2);
 
-e0505 = [ xTg-xSq ; yTg-ySq ];
-theta = 45;
+e0505 = [ -xTg+xSq ; -yTg+ySq ];%[ xTg-xSq ; yTg-ySq ];
+theta = -45;
 R = [cosd(theta) -sind(theta); sind(theta) cosd(theta)];
 e10 = sqrt(2) * R * e0505;
-theta = -45;
+theta = -45-90;
 R = [cosd(theta) -sind(theta); sind(theta) cosd(theta)];
 e01 = sqrt(2) * R * e0505;
 
-xCC = stats(iSqr).Centroid(1,1);
-yCC = stats(iSqr).Centroid(1,2);
+xCC = stats(iTrgl).Centroid(1,1);
+yCC = stats(iTrgl).Centroid(1,2);
 x00 = xCC - 0.5 * e10(1);
-y00 = yCC - 0.5 * e10(2);
+y00 = yCC - 0.0 * e10(2);%- 0.5 * e10(2);
 
-plot(x00,y00,'ob','markerFaceColor','b')
+% plot(x00,y00,'ob','markerFaceColor','b')
+% text(x00,y00,'(0,0)')
 % identify point (0,0)
 for is = 1 : length(stats)
     Xst(is) = stats(is).Centroid(1,1);
@@ -185,23 +226,23 @@ for is = 1 : length(stats)
 end
 d = sqrt((x00-Xst).^2+(y00-Yst).^2);
 [a,b00] = min(d);
+%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%
 % refine e10 and e01
+%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%
 d = sqrt((x00+e10(1)-Xst).^2+(y00+e10(2)-Yst).^2);
 [a,b10] = min(d);
-plot(Xst(b10),Yst(b10),'rs','markerFaceColor','b')
+% plot(Xst(b10),Yst(b10),'rs','markerFaceColor','b')
 e10 = [Xst(b10)-Xst(b00);Yst(b10)-Yst(b00)];
 d = sqrt((x00+e01(1)-Xst).^2+(y00+e01(2)-Yst).^2);
 [a,b01] = min(d);
-plot(Xst(b01),Yst(b01),'rs','markerFaceColor','b')
+% plot(Xst(b01),Yst(b01),'rs','markerFaceColor','b')
 e01 = [Xst(b01)-Xst(b00);Yst(b01)-Yst(b00)];
+quiver(Xst(b00),Yst(b00),e10(1),e10(2),'Color','b','LineWidth',3)
+quiver(Xst(b00),Yst(b00),e01(1),e01(2),'Color','b','LineWidth',3)
 
-iP = 1;
-mirePoints(iP).ist = b00;
-mirePoints(iP).xpix = Xst(b00);
-mirePoints(iP).ypix = Yst(b00);
-mirePoints(iP).xCoord = 0;
-mirePoints(iP).yCoord = 0;
-
+iP = 0;
 % normed versions of the vectors
 e10n = e10/(norm(e10)^2);
 e01n = e01/(norm(e01)^2);
@@ -215,14 +256,14 @@ for is = 1 : length(stats)
     UVx = dot( e10n, UV);
     xCoord    = round( UVx );
     xCoordEps = abs(UVx - xCoord);
-        UVy = dot( e01n, UV);
+    UVy = dot( e01n, UV);
     yCoord    = round( UVy );
     yCoordEps = abs(UVy - yCoord);
     
     
     if xCoordEps + yCoordEps < 0.25
         figure(hBW), hold on
-        plot(Xst,Yst,'ob','markerFaceColor','b')
+        %plot(Xst,Yst,'ob','markerFaceColor','b')
         iP = iP + 1;
         mirePoints(iP).ist = is;
         mirePoints(iP).xpix = Xst;
@@ -231,9 +272,16 @@ for is = 1 : length(stats)
         mirePoints(iP).yCoord = yCoord;
         mirePoints(iP).xCoordEps = xCoordEps;
         mirePoints(iP).yCoordEps = yCoordEps;
+        clear polyShp
+        polyShp = simplify(polyshape([stats(is).ConvexHull(:,1)],[stats(is).ConvexHull(:,2)],'simplify',false));
+        hpg1 = plot(polyShp,'FaceColor',[0.1 0.1 0.7],'FaceAlpha',.5);
+        text(Xst+20,Yst+20,sprintf('(%0.0f,%0.0f)',xCoord,yCoord))
+        mirePoints(iP).ConvexHull(:,1) = stats(is).ConvexHull(:,1);
+        mirePoints(iP).ConvexHull(:,2) = stats(is).ConvexHull(:,2);
     else
-        figure(hBW), hold on
-        plot(Xst,Yst,'ob','markerFaceColor','r')
+        %figure(hBW), hold on
+        %plot(Xst,Yst,'ob','markerFaceColor','r')
+
     end 
 end
 
@@ -250,12 +298,14 @@ dataAllImages(i).mirePoints = mirePoints;
 end
 
 
-
+%% TEMP
+figure
+plot(mirePoints())
 
 %% build the calib file
 
 savepath = 'D:\IFPEN\IFPEN_manips\expe_2021_05_06_calibration\reorderCalPlanes4test';
-
+savepath = 'D:\IFPEN\IFPEN_manips\expe_2021_05_20_calibration_air\forCalib';
 % from calib2D function
 % pimg      : center coordinates in original image [in pixels]
 % pos3D     : center coordinates in real world [in mm]
@@ -279,7 +329,7 @@ savepath = 'D:\IFPEN\IFPEN_manips\expe_2021_05_06_calibration\reorderCalPlanes4t
 %     calib(kz,kcam).name            : camera number (kcam),
 %     calib(kz,kcam).dirPlane        : [i,j,k] axes orientation. i,j = axis provided by the calibration mire, k is the axis along which the mire is displaced. For instance, if the mire is in the plane (Oxy) and that it is displaced along z axis, dirPlane=[1,2,3]. 
   
-zPlane = [00:05:40]; % mm
+zPlane = [00:10:40]; % [00:05:40]; % mm
 camName = {1,2};
 gridSpace = 5;        % mm
 
@@ -333,7 +383,7 @@ for kz = 1:numel(zPlane)
         kz
         kcam
         load([savepath filesep 'calib2D_' num2str(kz) '_cam' num2str(kcam) '.mat']);
-        calib(kz,kcam).posPlane = zPlanes(kz);
+        calib(kz,kcam).posPlane = zPlane(kz);
         calib(kz,kcam).pimg = pimg;
         calib(kz,kcam).pos3D = pos3D;
         calib(kz,kcam).movedpoints = movedpoints;

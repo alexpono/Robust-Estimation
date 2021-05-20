@@ -53,7 +53,9 @@ allExpeStrct(iexpe).CalibFile = ...
 allExpeStrct(iexpe).CalibFile = ...
     strcat('D:\IFPEN\IFPEN_manips\expe_2021_05_06_calibration\',...
            'reorderCalPlanes4test\calib.mat');
-allExpeStrct(iexpe).centerFinding_th = 2; % automatiser la définition de ces paramètres?
+allExpeStrct(iexpe).CalibFile = strcat('D:\IFPEN\IFPEN_manips\',...
+           'expe_2021_05_20_calibration_air\forCalib\calib.mat');
+       allExpeStrct(iexpe).centerFinding_th = 2; % automatiser la définition de ces paramètres?
 allExpeStrct(iexpe).centerFinding_sz = 2; % automatiser la définition de ces paramètres?
 allExpeStrct(iexpe).maxdist = 3;          % for Benjamin tracks function: 
                                           % max distances between particules from frame to frame
@@ -629,16 +631,20 @@ y_pxC1 = 546;
 x_pxC2 = 528;
 y_pxC2 = 533;
 
-cd('D:\IFPEN\IFPEN_manips\expe_2021_05_06_calibration\images4calibration')
+cd('D:\IFPEN\IFPEN_manips\expe_2021_05_06_calibration\reorderCalPlanes4test')
+cd('D:\IFPEN\IFPEN_manips\expe_2021_05_20_calibration_air\forCalib')
 listNames = dir('*.tif');
 ip = 3;
+clear ip1 ip2
 for ic = 1 : 2
+    clear A T BW hBW stats
     A = imread(listNames(ip+ic-1).name);
     [hIm,wIm] = size(A);
     T = adaptthresh(imgaussfilt(A,1),0.3);
     BW = imbinarize(imgaussfilt(A,2),T);
     hBW = figure; hold on
     imshow(A), hold on
+    title(listNames(ip+ic-1).name)
     set(gcf,'position',[400 48 900 900])
     stats = regionprops(BW,'Centroid','Area','boundingbox','perimeter','convexHull');
     clear iKill Xst Yst
@@ -666,27 +672,29 @@ for ic = 1 : 2
         Xst(is) = stats(is).Centroid(1,1);
         Yst(is) = stats(is).Centroid(1,2);
     end
+    clear a b d 
     d = sqrt((xgi-Xst).^2+(ygi-Yst).^2);
     [a,b] = min(d);
     if ic == 1
         ip1 = b;
-        hold on 
+        hold on
         plot(Xst(ip1),Yst(ip1),'ob')
+        x_pxC1 = Xst(ip1);
+        y_pxC1 = Yst(ip1);
     else
-        ip2 = b;  
-        hold on 
+        ip2 = b;
+        hold on
         plot(Xst(ip2),Yst(ip2),'ob')
+        x_pxC2 = Xst(ip2);
+        y_pxC2 = Yst(ip2);
     end
 end
-x_pxC1 = Xst(ip1);
-y_pxC1 = Yst(ip1);
-x_pxC2 = Xst(ip2);
-y_pxC2 = Yst(ip2);
+
 %% JE SUIS ICI
-[P,V,XYZ]=findRaysDarcy02(CalibFileCam1,x_pxC1,y_pxC1,Ttype)
-[P,V,XYZ]=findRaysDarcy02(CalibFileCam2,x_pxC2,y_pxC2,Ttype)
-%%
-Ttype  = 'T1';
+Ttype  = 'T3'; % T1 T3
+[P,V,XYZ]=findRaysDarcy02(CalibFileCam1,x_pxC1,y_pxC1,Ttype);
+[P,V,XYZ]=findRaysDarcy02(CalibFileCam2,x_pxC2,y_pxC2,Ttype);
+%
 crossP = crossRaysonFire(CalibFileCam1,CalibFileCam2,x_pxC1,y_pxC1,x_pxC2,y_pxC2,Ttype);
 crossP
 
