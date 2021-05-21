@@ -7,7 +7,7 @@ if strcmp(name,'DESKTOP-3ONLTD9')
     cd(strcat('C:\Users\Lenovo\Jottacloud\RECHERCHE\Projets\21_IFPEN\',...
         'manips\expe_2021_05_06_calibration_COPY\images4calibration'))
 elseif strcmp(name,'DARCY')
-    cd('D:\IFPEN\IFPEN_manips\expe_2021_05_20_calibration_air\forCalib')
+    cd('D:\IFPEN\IFPEN_manips\expe_2021_05_21_calibration_tilted\forCalibration')
 end
 %% modify the names of the calibration pictures
 
@@ -298,9 +298,6 @@ dataAllImages(i).mirePoints = mirePoints;
 end
 
 
-%% TEMP
-figure
-plot(mirePoints())
 
 %% build the calib file
 
@@ -380,8 +377,6 @@ end
 Ncam = 2;
 for kz = 1:numel(zPlane)
     for kcam = 1:Ncam
-        kz
-        kcam
         load([savepath filesep 'calib2D_' num2str(kz) '_cam' num2str(kcam) '.mat']);
         calib(kz,kcam).posPlane = zPlane(kz);
         calib(kz,kcam).pimg = pimg;

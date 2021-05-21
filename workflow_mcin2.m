@@ -625,6 +625,13 @@ end
 toc
 c = clock; fprintf('rays crossed at %0.2dh%0.2dm\n',c(4),c(5))
 
+
+%% DEBUGGING THE Ray Crossing
+iexpe = 2;
+CalibFile = allExpeStrct(iexpe).CalibFile;
+calibTemp = load(CalibFile,'calib'); calib = calibTemp.calib;
+CalibFileCam1 = calib(:,1);
+CalibFileCam2 = calib(:,2);
 %%
 x_pxC1 = 440;
 y_pxC1 = 546;
@@ -691,13 +698,13 @@ for ic = 1 : 2
 end
 
 %% JE SUIS ICI
-Ttype  = 'T3'; % T1 T3
+Ttype  = 'T1'; % T1 T3
 [P,V,XYZ]=findRaysDarcy02(CalibFileCam1,x_pxC1,y_pxC1,Ttype);
 [P,V,XYZ]=findRaysDarcy02(CalibFileCam2,x_pxC2,y_pxC2,Ttype);
 %
 crossP = crossRaysonFire(CalibFileCam1,CalibFileCam2,x_pxC1,y_pxC1,x_pxC2,y_pxC2,Ttype);
+%fprintf(,crossP(1,1),crossP(1,2),crossP(1,3))
 crossP
-
 %% Testing crossing the rays with points on the calibration plate
 triangleMire = [
     507.8330  878.5000   % mesuré à l'arrahce à la main
