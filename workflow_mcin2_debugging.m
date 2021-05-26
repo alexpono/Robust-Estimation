@@ -7,11 +7,12 @@ if strcmp(name,'DESKTOP-3ONLTD9')
     cd(strcat('C:\Users\Lenovo\Jottacloud\RECHERCHE\Projets\21_IFPEN\',...
         'manips\expe_2021_05_06_calibration_COPY\images4calibration'))
 elseif strcmp(name,'DARCY')
-    cd('C:\Users\darcy\Desktop\git\Robust-Estimation\calibrationImagesTraining01')
+    cd('D:\IFPEN\IFPEN_manips\expe_2021_05_06_calibration\reorderCalPlanes4test')
+    %cd('C:\Users\darcy\Desktop\git\Robust-Estimation\calibrationImagesTraining01')
 end
 
-zPlane = [00:10:30]; % [00:05:40]; % mm
-camName = {1,2,3};
+zPlane = [00:5:40]; % [00:05:40]; % mm
+camName = {1,2};
 gridSpace = 5;        % mm
 
 %% modify the names of the calibration pictures
@@ -56,11 +57,11 @@ A = imread(listNames(1).name);
 classImages = class(A);
 
 hP = figure; % progress in the calibration
-Aminimap = zeros(hIm*length(listNames)/nPlanes,nCameras*wIm,classImages);
+Aminimap = zeros(hIm*length(listNames)/nCameras,nCameras*wIm,classImages);
 for iim = 1 : length(listNames)
     xs = 1+rem(iim-1,nCameras)*wIm;
     xe = xs + wIm - 1;
-    ys = 1+floor((iim-1)/nPlanes)*hIm;
+    ys = 1+floor((iim-1)/nCameras)*hIm;
     ye = ys + hIm - 1;
     fprintf('iim: %0.2d, xs: %0.4d, xe: %0.4d, ys: %0.4d, ye: %0.4d, \n',...
              iim,xs,xe,ys,ye)
@@ -70,7 +71,7 @@ end
 imshow(Aminimap)
 set(gcf,'position',[ 16    48   366   942])
 
-%%
+
 dataAllImages = struct();
 for i = 1 : length(listNames)
     clear  mirePoints
@@ -155,28 +156,31 @@ polySqr  = simplify(polyshape([stats(iSqr).ConvexHull(:,1)],[stats(iSqr).ConvexH
 hpg2 = plot(polySqr,'FaceColor',[0 0.4470 0.7410],'FaceAlpha',.5);
 
 
-
 % define vectors 
 xTg = stats(iTrgl).Centroid(1,1);
 yTg = stats(iTrgl).Centroid(1,2);
 xSq = stats(iSqr).Centroid(1,1);
 ySq = stats(iSqr).Centroid(1,2);
 
-e0505 = [ -xTg+xSq ; -yTg+ySq ];%[ xTg-xSq ; yTg-ySq ];
-theta = -45;
+%e0505 = [ -xTg+xSq ; -yTg+ySq ];%[ xTg-xSq ; yTg-ySq ];
+% theta = -45;
+e0505 = [ xTg-xSq ; yTg-ySq ];
+theta = 45;
 R = [cosd(theta) -sind(theta); sind(theta) cosd(theta)];
 e10 = sqrt(2) * R * e0505;
-theta = -45-90;
+%theta = -45-90;
+theta = 45-90;
 R = [cosd(theta) -sind(theta); sind(theta) cosd(theta)];
 e01 = sqrt(2) * R * e0505;
 
 xCC = stats(iTrgl).Centroid(1,1);
 yCC = stats(iTrgl).Centroid(1,2);
 x00 = xCC - 0.5 * e10(1);
-y00 = yCC - 0.0 * e10(2);%- 0.5 * e10(2);
+%y00 = yCC - 0.0 * e10(2);
+y00 = yCC - 0.5 * e10(2);
 
-% plot(x00,y00,'ob','markerFaceColor','b')
-% text(x00,y00,'(0,0)')
+plot(x00,y00,'ob','markerFaceColor','b')
+text(x00,y00,'(0,0)')
 % identify point (0,0)
 for is = 1 : length(stats)
     Xst(is) = stats(is).Centroid(1,1);
@@ -198,7 +202,7 @@ d = sqrt((x00+e01(1)-Xst).^2+(y00+e01(2)-Yst).^2);
 % plot(Xst(b01),Yst(b01),'rs','markerFaceColor','b')
 e01 = [Xst(b01)-Xst(b00);Yst(b01)-Yst(b00)];
 quiver(Xst(b00),Yst(b00),e10(1),e10(2),'Color','b','LineWidth',3)
-quiver(Xst(b00),Yst(b00),e01(1),e01(2),'Color','b','LineWidth',3)
+quiver(Xst(b00),Yst(b00),e01(1),e01(2),'Color','r','LineWidth',3)
 
 iP = 0;
 % normed versions of the vectors
@@ -260,7 +264,7 @@ end
 %% build the calib file
 
 savepath = 'D:\IFPEN\IFPEN_manips\expe_2021_05_06_calibration\reorderCalPlanes4test';
-savepath = 'D:\IFPEN\IFPEN_manips\expe_2021_05_20_calibration_air\forCalib';
+%savepath = 'D:\IFPEN\IFPEN_manips\expe_2021_05_20_calibration_air\forCalib';
 % from calib2D function
 % pimg      : center coordinates in original image [in pixels]
 % pos3D     : center coordinates in real world [in mm]
