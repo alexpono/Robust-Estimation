@@ -7,8 +7,13 @@ if strcmp(name,'DESKTOP-3ONLTD9')
     cd(strcat('C:\Users\Lenovo\Jottacloud\RECHERCHE\Projets\21_IFPEN\',...
         'manips\expe_2021_05_06_calibration_COPY\images4calibration'))
 elseif strcmp(name,'DARCY')
-    cd('D:\IFPEN\IFPEN_manips\expe_2021_05_21_calibration_tilted\forCalibration')
+    cd('C:\Users\darcy\Desktop\git\Robust-Estimation\calibrationImagesTraining01')
 end
+
+zPlane = [00:10:30]; % [00:05:40]; % mm
+camName = {1,2,3};
+gridSpace = 5;        % mm
+
 %% modify the names of the calibration pictures
 
 listNames = dir('*.tif');
@@ -42,23 +47,30 @@ clear listNames mirePoints
 mirePoints = struct();
 listNames = dir('*.tif');
 
+% automatic detection of number of cameras and number of planes
+nPlanes  = length(zPlane);
+nCameras = length(camName);
+
 A = imread(listNames(1).name);
 [hIm,wIm] = size(A);
+classImages = class(A);
+
 hP = figure; % progress in the calibration
-Aminimap = zeros(hIm*length(listNames)/2,2*wIm,'uint8');
+Aminimap = zeros(hIm*length(listNames)/nPlanes,nCameras*wIm,classImages);
 for iim = 1 : length(listNames)
-    xs = 1+rem(iim+1,2)*wIm;
+    xs = 1+rem(iim-1,nCameras)*wIm;
     xe = xs + wIm - 1;
-    ys = 1+floor((iim-1)/2)*hIm;
+    ys = 1+floor((iim-1)/nPlanes)*hIm;
     ye = ys + hIm - 1;
-    %fprintf('iim: %0.2d, xs: %0.4d, xe: %0.4d, ys: %0.4d, ye: %0.4d, \n',...
-    %         iim,xs,xe,ys,ye)
+    fprintf('iim: %0.2d, xs: %0.4d, xe: %0.4d, ys: %0.4d, ye: %0.4d, \n',...
+             iim,xs,xe,ys,ye)
    A = imread(listNames(iim).name);
    Aminimap(ys:ye,xs:xe) = A(:,:);
 end
 imshow(Aminimap)
 set(gcf,'position',[ 16    48   366   942])
 
+%%
 dataAllImages = struct();
 for i = 1 : length(listNames)
     clear  mirePoints
@@ -111,60 +123,6 @@ for i = 1 : length(listNames)
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % find square and triangle
-% for is = 1 : length(stats)
-% 
-% % same as dCCH but more smooth
-% poly1 = simplify(polyshape([stats(is).ConvexHull(:,1)],[stats(is).ConvexHull(:,2)],'Simplify',false));
-% xCC = stats(is).Centroid(1,1);
-% yCC = stats(is).Centroid(1,2);
-% for itheta = 1 : 360
-%     lineseg = [[xCC yCC];...
-%                [xCC+400*cosd(itheta) yCC+400*sind(itheta)]];
-%     [in,out] = intersect(poly1,lineseg);
-%     xCH = in(end,1);
-%     yCH = in(end,2);
-%     dCCHBetter(itheta) = sqrt((xCC-xCH)^2+(yCC-yCH)^2);% distance center form to convexhull
-% end
-% stats(is).dCCHBetter = dCCHBetter;
-% stats(is).VdCC = var(dCCHBetter);
-% [~,~,w,p] = findpeaks(dCCHBetter,[1:1:length(dCCHBetter)],'SortStr','descend');
-% stats(is).w = w;
-% stats(is).wsum = sum(w);
-% stats(is).p = p;
-% stats(is).psum = sum(p);
-% end
-
-
-% criterion for square and triangle
-% figure, hold on
-% plot([stats.psum],[stats.VdCC],'o')
-% xlabel('p')
-% ylabel('variance')
-% box on
-% here I tried automatic finding of the square and the triangle, but it
-% does not always work
-% [~,b] = maxk([stats.VdCC],2);
-% [~,c] = max( [stats(b(1)).psum , stats(b(2)).psum ] );
-% iTrgl = b(c);
-% iSqr  = b(3-c);
-
-% % ginput for square and triangle
-% [xgi,ygi] = ginput(1);
-% for is = 1 : length(stats)
-%     Xst(is) = stats(is).Centroid(1,1);
-%     Yst(is) = stats(is).Centroid(1,2);
-% end
-% d = sqrt((xgi-Xst).^2+(ygi-Yst).^2);
-% [a,b] = min(d);
-% iTrgl = b;
-% [xgi,ygi] = ginput(1);
-% for is = 1 : length(stats)
-%     Xst(is) = stats(is).Centroid(1,1);
-%     Yst(is) = stats(is).Centroid(1,2);
-% end
-% d = sqrt((xgi-Xst).^2+(ygi-Yst).^2);
-% [a,b] = min(d);
-% iSqr = b;
 
 % try to automatic finding the triangle and square
 clear Xst Yst
@@ -325,10 +283,6 @@ savepath = 'D:\IFPEN\IFPEN_manips\expe_2021_05_20_calibration_air\forCalib';
 %     calib(kz,kcam).cHull           : coordinates of the region of interest,
 %     calib(kz,kcam).name            : camera number (kcam),
 %     calib(kz,kcam).dirPlane        : [i,j,k] axes orientation. i,j = axis provided by the calibration mire, k is the axis along which the mire is displaced. For instance, if the mire is in the plane (Oxy) and that it is displaced along z axis, dirPlane=[1,2,3]. 
-  
-zPlane = [00:10:40]; % [00:05:40]; % mm
-camName = {1,2};
-gridSpace = 5;        % mm
 
 for idai = 1 : length(dataAllImages)
     clear kz camNumber mirePoints PNpimg xyCoord PNpos3D PNpos2D
@@ -398,51 +352,6 @@ save(sprintf('%s/calib.mat',savepath),'calib');
 
 
 
-%% TEMP
-
- idai = 5%1 : length(dataAllImages)
-    clear kz camNumber mirePoints PNpimg xyCoord PNpos3D PNpos2D
-    kz  = 1+floor((idai-1)/2)
-    camNumber = 1+rem(idai+1,2)
-    
-    % build PNpimg
-    mirePoints = dataAllImages(idai).mirePoints;
-    PNpimg(1:length(mirePoints),1) = [mirePoints.xpix];
-    PNpimg(1:length(mirePoints),2) = [mirePoints.ypix];
-    PNpimg = sortrows(PNpimg,1);
-    
-    % build PNpos3D
-    % sort xCoord and yCoord
-    xyCoord(:,1) = [mirePoints.xCoord];
-    xyCoord(:,2) = [mirePoints.yCoord];
-    xyCoord = sortrows(xyCoord,1);
-    for ixy = 1 : length(xyCoord)
-        PNpos3D(ixy,1) = gridSpace * xyCoord(ixy,1);
-        PNpos3D(ixy,2) = gridSpace * xyCoord(ixy,2);
-        PNpos3D(ixy,3) = zPlane(kz);
-    end
-    PNpos2D      = PNpos3D(:,1:2);         % position of dots in 2d [mm]
-    
-    clear T3rw2px T3px2rw T1rw2px pos3D pimg movedpoints addedpoints convHullpimg
-    % compute 3rd order polynomial spatial transformation from image points
-    % [in pixels] to 2d position in real-space on plane [in mm]
-    ttype = 'polynomial';
-    T3rw2px  = fitgeotrans(PNpimg,PNpos2D,ttype,3); % inverse transform
-    T3px2rw  = fitgeotrans(PNpos2D,PNpimg,ttype,3); % forward transform
-    
-    ttype = 'projective';
-    T1rw2px  = fitgeotrans(PNpimg,PNpos2D,ttype); % inverse transform
-
-
-%%
-T1px2rw = fitgeotrans(PNpos3D(:,1:2),PNpimg,'projective');
-%%
-[Xtmp,Ytmp]=transformPointsInverse(T1px2rw,PNpimg(25,1),PNpimg(25,2))
-%%
-x_pxC1
-y_pxC1
-PNpimg(25,1)
-PNpimg(25,2)
 %%
 
 
