@@ -842,6 +842,12 @@ for ic = 1 : 2
         y_pxC2 = Yst(ip2);
     end
 end
+%%
+x_pxC1 = 852;
+y_pxC1 = 358;
+x_pxC2 = 878;
+y_pxC2 = 366;
+% xyCam1Cam2 = []
 % JE SUIS ICI
 Ttype  = 'T1'; % T1 T3
 %[P,V,XYZ]=findRaysDarcy02(CalibFileCam1,x_pxC1,y_pxC1,Ttype);
@@ -851,18 +857,6 @@ crossP = crossRaysonFire(CalibFileCam1,CalibFileCam2,x_pxC1,y_pxC1,x_pxC2,y_pxC2
 %fprintf(,crossP(1,1),crossP(1,2),crossP(1,3))
 fprintf('x_pxC1: %3.3f, y_pxC1: %3.3f x_pxC2: %3.3f y_pxC2: %3.3f \ncrossP: x: %3.3f , y: %3.3f , z: %3.3f \n',...
     x_pxC1, y_pxC1, x_pxC2, y_pxC2, crossP(1),crossP(2),crossP(3))
-%% 
-for il = 1 : size(xyCam1Cam2,1)
-    x_pxC1 = xyCam1Cam2(il,1);
-    y_pxC1 = xyCam1Cam2(il,2);
-    x_pxC2 = xyCam1Cam2(il,3);
-    y_pxC2 = xyCam1Cam2(il,4);
-crossP = crossRaysonFire(CalibFileCam1,CalibFileCam2,x_pxC1,y_pxC1,x_pxC2,y_pxC2,Ttype);
-%fprintf(,crossP(1,1),crossP(1,2),crossP(1,3))
-fprintf('x_pxC1: %3.3f, y_pxC1: %3.3f x_pxC2: %3.3f y_pxC2: %3.3f \ncrossP: x: %3.3f , y: %3.3f , z: %3.3f \n',...
-    x_pxC1, y_pxC1, x_pxC2, y_pxC2, crossP(1),crossP(2),crossP(3))
-end
-
 %% Testing crossing the rays with points on the calibration plate
 triangleMire = [
     507.8330  878.5000   % mesuré à l'arrahce à la main
