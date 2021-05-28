@@ -8,11 +8,11 @@ if strcmp(name,'DESKTOP-3ONLTD9')
         'manips\expe_2021_05_06_calibration_COPY\images4calibration'))
 elseif strcmp(name,'DARCY')
     % cd('D:\IFPEN\IFPEN_manips\expe_2021_05_06_calibration\reorderCalPlanes4test')
-    cd('D:\IFPEN\IFPEN_manips\expe_2021_05_28_calibration_in_air\forCalib')
+    cd('D:\IFPEN\IFPEN_manips\expe_2021_05_28_calibration_in_air\calibration02\forCalibration')
     % cd('C:\Users\darcy\Desktop\git\Robust-Estimation\calibrationImagesTraining01')
 end
 
-zPlane = [00:5:40]; % [00:05:40]; % mm
+zPlane = [00:10:40]; % [00:05:40]; % mm
 camName = {1,2};
 gridSpace = 5;        % mm
 
@@ -163,22 +163,29 @@ yTg = stats(iTrgl).Centroid(1,2);
 xSq = stats(iSqr).Centroid(1,1);
 ySq = stats(iSqr).Centroid(1,2);
 
-%e0505 = [ -xTg+xSq ; -yTg+ySq ];%[ xTg-xSq ; yTg-ySq ];
-% theta = -45;
-e0505 = [ xTg-xSq ; yTg-ySq ];
-theta = 45;
+% FACE A
+e0505 = [ -xTg+xSq ; -yTg+ySq ];%[ xTg-xSq ; yTg-ySq ];
+ theta = -45;
+% FACE B
+%e0505 = [ xTg-xSq ; yTg-ySq ];
+%theta = 45;
+
 R = [cosd(theta) -sind(theta); sind(theta) cosd(theta)];
 e10 = sqrt(2) * R * e0505;
-%theta = -45-90;
-theta = 45-90;
+% FACE A
+theta = -45-90;
+% FACE B
+% theta = 45-90;
 R = [cosd(theta) -sind(theta); sind(theta) cosd(theta)];
 e01 = sqrt(2) * R * e0505;
 
 xCC = stats(iTrgl).Centroid(1,1);
 yCC = stats(iTrgl).Centroid(1,2);
 x00 = xCC - 0.5 * e10(1);
-%y00 = yCC - 0.0 * e10(2);
-y00 = yCC - 0.5 * e10(2);
+% FACE A
+y00 = yCC - 0.0 * e10(2);
+% FACE B
+% y00 = yCC - 0.5 * e10(2);
 
 plot(x00,y00,'ob','markerFaceColor','b')
 text(x00,y00,'(0,0)')
@@ -264,7 +271,7 @@ end
 
 %% build the calib file
 
-savepath = 'D:\IFPEN\IFPEN_manips\expe_2021_05_06_calibration\reorderCalPlanes4test';
+savepath = 'D:\IFPEN\IFPEN_manips\expe_2021_05_28_calibration_in_air\calibrationFile';
 %savepath = 'D:\IFPEN\IFPEN_manips\expe_2021_05_20_calibration_air\forCalib';
 % from calib2D function
 % pimg      : center coordinates in original image [in pixels]

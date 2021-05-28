@@ -12,30 +12,6 @@ end
 load('all_IFPEN_DARCY02_experiments.mat')
 
 
-%% CALIBRATION - calib manip 2021 04 22
-dirIn  = 'D:\IFPEN\IFPEN_manips\expe_2021_05_06_calibration\images4calibration\';
-zPlanes = [00:05:40]; % mm
-camName = {1,2};
-dotSize = 30;         % pixels
-th = 60;              % threshold 
-
-extension = 'tif';
-FirstPlane = 1;
-FirstCam   = 1;
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%
-gridSpace = 5;        % mm
-%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-lnoise    = 1;
-blackDots = 0;
-%MakeCalibration_Vnotch(dirIn,zPlanes,camName,gridSpace,th,dotSize,lnoise,blackDots,extension,FirstPlane,FirstCam)
-% manip IFPEN
-cd(dirIn)
-MakeCalibration_Vnotch(dirIn, zPlanes, camName, gridSpace, th, dotSize, lnoise, blackDots,extension,FirstPlane,FirstCam)
-
 %% STEP 0 - Defining paths using list of experiments stored in sturture allExpeStrct
 fprintf('define folders and experiment name\n')
 
@@ -58,6 +34,25 @@ allExpeStrct(iexpe).maxdist = 3;          % for Benjamin tracks function:
                                           % max distances between particules from frame to frame
 allExpeStrct(iexpe).longmin = 10;         % for Benjamin tracks function: 
                                           % minimum number of points of a trajectory
+%%
+%%
+iexpe = 3;
+
+allExpeStrct(iexpe).type        = 'experiment'; % experiment / calibration
+allExpeStrct(iexpe).name        = 'expe20210528_test';
+allExpeStrct(iexpe).inputFolder = ...
+    strcat('D:\IFPEN\IFPEN_manips\expe_2021_05_28_manipTestCrossRays_in_air\');
+allExpeStrct(iexpe).analysisFolder = ...
+    strcat('D:\pono\IFPEN\analysisExperiments\analysis_expe_20210528\');
+allExpeStrct(iexpe).CalibFile = ...
+    strcat('D:\IFPEN\IFPEN_manips\expe_2021_05_28_calibration_in_air\',...
+    'calibrationFile\calib.mat');
+allExpeStrct(iexpe).centerFinding_th = 2; % automatiser la définition de ces paramètres?
+allExpeStrct(iexpe).centerFinding_sz = 2; % automatiser la définition de ces paramètres?
+allExpeStrct(iexpe).maxdist = 3;          % for Benjamin tracks function:
+% max distances between particules from frame to frame
+allExpeStrct(iexpe).longmin = 10;         % for Benjamin tracks function:
+% minimum number of points of a trajectory
 %% findTracks
 iexpe = 2;
 
@@ -91,8 +86,8 @@ wim = 1152;
 
 clear CCtemp CC1 CC2 totalnFrames
 
-CC1 = allTraj(35).CC; % CCtemp.CC;
-CC2 = allTraj(36).CC; % CCtemp.CC;
+CC1 = allTraj(1).CC; % CCtemp.CC;
+CC2 = allTraj(2).CC; % CCtemp.CC;
 totalnFrames = size(CC1,2);
 
 %% ROBUST ESTIMATION PART 1.1 removing the NaNs for all t
@@ -446,7 +441,7 @@ end
 toc
 %axis([0 1152 0 1152])
 c = clock; fprintf('done associating trajectories at %0.2dh%0.2dm\n',c(4),c(5))
-%% doing something on structPotentialPairs
+% using structPotentialPairs, decide who matches or not
 c = clock; fprintf('start at %0.2dh%0.2dm\n',c(4),c(5))
 tic
 % figure('defaultAxesFontSize',20), box on, hold on
@@ -488,7 +483,7 @@ end
 
 c = clock; fprintf('done at %0.2dh%0.2dm\n',c(4),c(5))
 
-%% good and bad pairing
+% good and bad pairing
 tic
 c = clock; fprintf('start at %0.2dh%0.2dm\n',c(4),c(5))
 %figure('defaultAxesFontSize',20), box on, hold on
@@ -773,7 +768,7 @@ end
 
 
 %% DEBUGGING THE Ray Crossing
-iexpe = 2;
+iexpe = 3;
 CalibFile = allExpeStrct(iexpe).CalibFile;
 calibTemp = load(CalibFile,'calib'); calib = calibTemp.calib;
 CalibFileCam1 = calib(:,1);
@@ -843,7 +838,7 @@ for ic = 1 : 2
     end
 end
 % JE SUIS ICI
-Ttype  = 'T1'; % T1 T3
+Ttype  = 'T3'; % T1 T3
 %[P,V,XYZ]=findRaysDarcy02(CalibFileCam1,x_pxC1,y_pxC1,Ttype);
 %[P,V,XYZ]=findRaysDarcy02(CalibFileCam2,x_pxC2,y_pxC2,Ttype);
 close all
@@ -1317,7 +1312,7 @@ function [trajArray_CAM1,tracks_CAM1,CCout,M] = DARCY02_findTracks(allExpeStrct,
 % 2. subtract mean of the image sequence
 % 3. find particles positions on all images
 
-fprintf('line 1308 \n')
+%fprintf('line 1308 \n')
 
 dofigures = 'no';
 if numel(varargin)
@@ -1348,7 +1343,7 @@ fprintf('load image sequence - DONE \n')
 ImMean = uint8(mean(M,3));
 % subtract
 Im01 = M - ImMean;
-fprintf('line 1339 \n')
+%fprintf('line 1339 \n')
 
 %%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%
@@ -1358,13 +1353,14 @@ th = allExpeStrct(iexpe).centerFinding_th;
 sz = allExpeStrct(iexpe).centerFinding_sz;
 Nwidth = 1;
 for it = 1 : size(M,3)
-    fprintf('line 1349, doing time %0.2d \n',it)
+    fprintf('doing time %0.4d / %0.4d \n',it,size(M,3))
     CC(it).xyRAW = pkfnd(Im01(:,:,it),th,sz);
     for ixy = 1 : length(CC(it).xyRAW)
         % refine at subpixel precision
         Im = zeros(size(Im01,1),size(Im01,2),class(Im01));
         Im(:,:) = Im01(:,:,it);
-        clear xpkfnd ypkfnd
+        clear xpkfnd ypkfnd Ip
+        Ip = zeros(2*Nwidth+1,2*Nwidth+1,'double');
         xpkfnd = CC(it).xyRAW(ixy,1);
         ypkfnd = CC(it).xyRAW(ixy,2);
         Ip = double(Im(ypkfnd-Nwidth:ypkfnd+Nwidth,xpkfnd-Nwidth:xpkfnd+Nwidth));
