@@ -15,27 +15,6 @@ load('all_IFPEN_DARCY02_experiments.mat')
 %% STEP 0 - Defining paths using list of experiments stored in sturture allExpeStrct
 fprintf('define folders and experiment name\n')
 
-iexpe = 2;
-
-allExpeStrct(iexpe).type        = 'experiment'; % experiment / calibration
-allExpeStrct(iexpe).name        = 'expe20210505_run03';
-allExpeStrct(iexpe).inputFolder = ...
-    strcat('D:\IFPEN\IFPEN_manips\expe_2021_05_05\run03\');
-allExpeStrct(iexpe).analysisFolder = ...
-    strcat('D:\pono\IFPEN\analysisExperiments\analysis_expe_20210505\'); 
-allExpeStrct(iexpe).CalibFile = ...
-    strcat('D:\IFPEN\IFPEN_manips\expe_2021_05_06_calibration\',...
-           'images4calibration\calib.mat');
-allExpeStrct(iexpe).CalibFile = strcat('D:\IFPEN\IFPEN_manips\',...
-    'expe_2021_05_06_calibration\reorderCalPlanes4test\calib.mat');
-       allExpeStrct(iexpe).centerFinding_th = 2; % automatiser la définition de ces paramètres?
-allExpeStrct(iexpe).centerFinding_sz = 2; % automatiser la définition de ces paramètres?
-allExpeStrct(iexpe).maxdist = 3;          % for Benjamin tracks function: 
-                                          % max distances between particules from frame to frame
-allExpeStrct(iexpe).longmin = 10;         % for Benjamin tracks function: 
-                                          % minimum number of points of a trajectory
-%%
-%%
 iexpe = 3;
 
 allExpeStrct(iexpe).type        = 'experiment'; % experiment / calibration
@@ -53,8 +32,10 @@ allExpeStrct(iexpe).maxdist = 3;          % for Benjamin tracks function:
 % max distances between particules from frame to frame
 allExpeStrct(iexpe).longmin = 10;         % for Benjamin tracks function:
 % minimum number of points of a trajectory
-%% findTracks
-iexpe = 2;
+
+
+%% STEP 1 - findTracks
+iexpe = 3;
 
 allTraj = struct();
 
@@ -73,24 +54,19 @@ end
 c2 = clock;
 e = etime(c2,c1)
 fprintf('done \n')
-%% TEMP
-figure, hold on
-imagesc(uint8(max(M,[],3))), colormap gray
-%% start robust estimation -> croiser les rayons
+
+%% STEP 2 - start robust estimation
 close all
-iexpe = 2;
 CalibFile = allExpeStrct(iexpe).CalibFile;
 
-him = 1152;
-wim = 1152;
-
+him = size(M,1); % 1152;
+wim = size(M,2); % 1152;
 clear CCtemp CC1 CC2 totalnFrames
-
-CC1 = allTraj(1).CC; % CCtemp.CC;
-CC2 = allTraj(2).CC; % CCtemp.CC;
+CC1 = allTraj(35).CC; % CCtemp.CC;
+CC2 = allTraj(36).CC; % CCtemp.CC;
 totalnFrames = size(CC1,2);
 
-%% ROBUST ESTIMATION PART 1.1 removing the NaNs for all t
+%% STEP 3 - removing the NaNs for all t
 for it = 1 : size(CC1,2)
     ikill = [];
     for ip = 1 : size(CC1(it).X,1)
@@ -110,7 +86,7 @@ for it = 1 : size(CC1,2)
     CC2(it).X(ikill) = [];
     CC2(it).Y(ikill) = [];
 end
-%% ROBUST ESTIMATION PART 1.2 normxcorr2 - we build the images
+%  normxcorr2 - we build the images
 
 ACC1 = zeros(him,wim,'uint8');
 ACC2 = zeros(him,wim,'uint8');
@@ -133,8 +109,10 @@ imagesc(20*ACC1)%, colormap gray
 hcam02 = figure;
 imagesc(20*ACC2)%, colormap gray
 
-%% ROBUST ESTIMATION PART 1.3 normxcorr2 pass 01 (on a large window) 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% normxcorr2 pass 01 (on a large window) 
 close all
 monPos = get(0,'MonitorPositions');
 wmon=monPos(end,3); hmon=monPos(end,4);
@@ -164,8 +142,8 @@ drawrectangle(gca,'Position',[xm-wsub,ym-wsub,2*wsub,2*wsub], ...
 figure(hcam02), hold on
 drawrectangle(gca,'Position',[xoffSet-wsub,yoffSet-wsub,2*wsub,2*wsub], ...
     'FaceAlpha',0,'Color','r');
-dxPass01 =   xoffSet-xm
-dyPass01 =   yoffSet-ym
+dxPass01 =   xoffSet-xm;
+dyPass01 =   yoffSet-ym;
 R = (dxPass01^2+dyPass01^2)^(1/2);
 c = clock; fprintf('finished at %0.2dh%0.2dm\n',c(4),c(5))
 
@@ -181,7 +159,9 @@ imagesc(sub02)%, colormap gray
 title('Camera2 crop')
 set(gcf,'position',[765    90   431   360]);
 
-%%  ROBUST ESTIMATION PART 1.3 normxcorr2 pass 02 (on a small window)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% ROBUST ESTIMATION PART 1.3 normxcorr2 pass 02 (on a small window)
 
 wti = 300; % width template images
 wstep = 100; % step for sampling the image
@@ -248,9 +228,9 @@ end
 
 sprintf('done')
 
-%% ROBUST ESTIMATION PART 1.4 build tform1
-%fixedPoints = [163 427 963 951; 570 781 322 738]';
-%movingPoints = [271 522 1002 1002; 456 631 198 573]';
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% build tform1
 clear fixedPoints movingPoints
 corOK = ([tmpl_IM_tStr.correlable] == 1);
 fixedPoints  = [[tmpl_IM_tStr(corOK).x]',      [tmpl_IM_tStr(corOK).y]'];
@@ -268,8 +248,10 @@ movingPoints = [[tmpl_IM_tStr(corOK).xoffSet]',[tmpl_IM_tStr(corOK).yoffSet]'];
 transformationType = 'affine';
 tform1 = fitgeotrans(movingPoints,fixedPoints,transformationType);
 
+% check some points
 [X,Y] = transformPointsForward(tform1,1010,583);  % check some points
 [X,Y] = transformPointsForward(tform1,0,0);       % check the change of (x0,y0)
+
 ACC2tformed = imwarp(ACC2,tform1, 'OutputView', imref2d( size(ACC1) ));
 
 falseColorOverlay = imfuse( 40*ACC1, 40*ACC2tformed);
@@ -288,14 +270,9 @@ set(gcf,'position',[ 189         122        1058         858])
 %     pause(.1)
 %     axis([110 210 700 900])
 % end
-%% showing images before imwarp
-% falseColorOverlay = imfuse( 1*ACC1, 1*ACC2);
-% imshow( falseColorOverlay, 'initialMagnification', 'fit');
-% set(gcf,'position',[ 189         122        1058         858])
-%% ROBUST ESTIMATION PART 2.1 track particles in 2D on each camera
 
-%% ROBUST ESTIMATION PART 2.1 from BLP TRAJECTOIRE 2D
-tic
+%% STEP 4 - track particles in 2D on each camera
+% from BLP TRAJECTOIRE 2D
 clear part_cam1 part_cam2
 for it = 1 : size(CC1,2)
     part_cam1(it).pos(:,1) = [CC1(it).X]; % out_CAM1(:,1);
@@ -310,51 +287,49 @@ for it = 1 : size(CC1,2)
     part_cam2(it).pos(:,3) = ones(length([cam2X]),1)*it;
     part_cam2(it).intensity = 0; %mI;
 end
-toc
 
-tic
 maxdist = 3;
 longmin = 5;
 [trajArray_CAM1,tracks_CAM1]=TAN_track2d(part_cam1,maxdist,longmin);
 
 [trajArray_CAM2,tracks_CAM2]=TAN_track2d(part_cam2,maxdist,longmin);
-toc
 
-sprintf('done')
-%% keep only long trajectories 
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% keep only long trajectories 
 ltraj = 5; % = 10
 clear ikill01 ikill02
 for itraj1 = 1 : length(trajArray_CAM1)
     lt1(itraj1) = size(trajArray_CAM1(itraj1).track,1) ; 
 end
-figure
-histogram(lt1,[0:2:1000])
-hold on
-plot(10*[1 1],[0 400],'--k')
 ikill01 = find(lt1<ltraj);
+% figure
+% histogram(lt1,[0:2:1000])
+% hold on
+% plot(10*[1 1],[0 400],'--k')
 
 for itraj2 = 1 : length(trajArray_CAM2)
     lt2(itraj2) = size(trajArray_CAM2(itraj2).track,1) ; 
 end
-figure
-histogram(lt2)
 ikill02 = find(lt2<ltraj);
+% figure
+% histogram(lt2)
 
 trajArray_CAM1(ikill01)=[];
 trajArray_CAM2(ikill02)=[];
 
-%% try to associate trajectories: prematch
-c = clock; fprintf('start at %0.2dh%0.2dm\n',c(4),c(5))
+
+%% STEP 5 - try to associate trajectories: prematch
+ci = clock; fprintf('start at %0.2dh%0.2dm\n',c(4),c(5))
 
 % figure('defaultAxesFontSize',20), hold on, box on
 structPotentialPairs = struct(); % structure listing potential pairs of trajectories
 ipairs = 0;
-tic
+
 
 clear listPotTraj
 % listPotTraj = struct(); % prematch, list of potential trajectories
-tic
+
 % idea to speed up: ne tester que les trajectoires qui sont prochent, avec
 % une distance minimale dmin = 50 pix par exemple.
 % prematch time is 0.2 sec
@@ -387,20 +362,17 @@ Lcam02rm = repmat(Lcam02,length(trajArray_CAM1),1);
 LLcam0102 = Lcam01rm + Lcam02rm;
 
 listPotTraj = - LLcam0102 + pdist2([[trajArray_CAM1.x0]',[trajArray_CAM1.y0]'],[[trajArray_CAM2.x0]',[trajArray_CAM2.y0]']);
-toc
 
 % coupler avec la liste des temps possibles
-%%
-figure
-histogram(listPotTraj(:))
 
-%% avec prematch
 
-c = clock; fprintf('start associating trajectories at %0.2dh%0.2dm\n',c(4),c(5))
-
+%%%%% %%%%% %%%%% %%%%% %%%%%
+%%%%% %%%%% %%%%% %%%%% %%%%%
+%%%%% %%%%% %%%%% %%%%% %%%%%
+%%%%% %%%%% %%%%% %%%%% %%%%%
+%%%%% %%%%% %%%%% %%%%% %%%%%
 ipairs = 0;
 clear structPotentialPairs
-tic
 % figure('defaultAxesFontSize',20), box on, hold on
 for itrj01 = 1 : length(trajArray_CAM1)
     % fprintf('progress: %0.4d / %0.4d \n',itrj01,length(trajArray_CAM1))
@@ -438,19 +410,12 @@ for itrj01 = 1 : length(trajArray_CAM1)
     end
     %axis([min(xtCAM01) max(xtCAM01) min(ytCAM01) max(ytCAM01)])
 end
-toc
-%axis([0 1152 0 1152])
-c = clock; fprintf('done associating trajectories at %0.2dh%0.2dm\n',c(4),c(5))
+
 % using structPotentialPairs, decide who matches or not
-c = clock; fprintf('start at %0.2dh%0.2dm\n',c(4),c(5))
-tic
-% figure('defaultAxesFontSize',20), box on, hold on
 %%%%%%%%%%
 for iP = 1 : length(structPotentialPairs)
-    % iP
     itrj01 = structPotentialPairs(iP).trajCAM01;
     itrj02 = structPotentialPairs(iP).trajCAM02;
-    
     
     clear x01 y01 x02 y02 db
     x01 = trajArray_CAM1(itrj01).track(:,1);
@@ -458,15 +423,13 @@ for iP = 1 : length(structPotentialPairs)
     x02 = trajArray_CAM2(itrj02).track(:,1);
     y02 = trajArray_CAM2(itrj02).track(:,2);
     
-    
     for it = 1 : length([structPotentialPairs(iP).tCAM01])
         it1 = structPotentialPairs(iP).tCAM01(it);
         it2 = structPotentialPairs(iP).tCAM02(it);
-        %plot([x01(it1),x02(it2)],[y01(it1),y02(it2)],'-g')
         db(it) = ((x01(it1)-x02(it2))^2 + (y01(it1)-y02(it2))^2)^(1/2);
     end
     
-        it1tt = [structPotentialPairs(iP).tCAM01];
+    it1tt = [structPotentialPairs(iP).tCAM01];
     it2tt = [structPotentialPairs(iP).tCAM02];
     
     Dx01 = x01(it1tt(end))-x01(it1tt(1));
@@ -481,11 +444,14 @@ for iP = 1 : length(structPotentialPairs)
     structPotentialPairs(iP).d = mean(db);
 end
 
-c = clock; fprintf('done at %0.2dh%0.2dm\n',c(4),c(5))
 
+%%%%% %%%%% %%%%% %%%%% %%%%%
+%%%%% %%%%% %%%%% %%%%% %%%%%
+%%%%% %%%%% %%%%% %%%%% %%%%%
+%%%%% %%%%% %%%%% %%%%% %%%%%
+%%%%% %%%%% %%%%% %%%%% %%%%%
 % good and bad pairing
-tic
-c = clock; fprintf('start at %0.2dh%0.2dm\n',c(4),c(5))
+
 %figure('defaultAxesFontSize',20), box on, hold on
 % for itrj01 = 1 : length(trajArray_CAM1)
 %     clear xtCAM01 ytCAM01
@@ -542,9 +508,15 @@ toc
 %ax.XLim = [480  725];
 %ax.YLim = [185  510];
 %set(gcf,'position',[680   117   990   861])
-c = clock; fprintf('done at %0.2dh%0.2dm\n',c(4),c(5))
+ce = clock; fprintf('done at %0.2dh%0.2dm in %0.0f s \n',c(4),c(5), etime(ce,ci))
 %set(gca,'ydir','reverse')
-%% Crossing the rays
+
+%%%%% %%%%% %%%%% %%%%% %%%%%
+%%%%% %%%%% %%%%% %%%%% %%%%%
+%%%%% %%%%% %%%%% %%%%% %%%%%
+%%%%% %%%%% %%%%% %%%%% %%%%%
+%%%%% %%%%% %%%%% %%%%% %%%%%
+%% STEP 6 - Crossing the rays
 c = clock; fprintf('on croise les doigts at %0.2dh%0.2dm\n',c(4),c(5))
 
 Ttype = 'T1';
@@ -570,7 +542,6 @@ for iP = 1 : 1 : length(structPotentialPairs)
             y02incam01 = trajArray_CAM2(itrj02).track(structPotentialPairs(iP).tCAM02,2);
             [ x02, y02] = transformPointsInverse(tform1,x02incam01,y02incam01);
             
-            
             for ixy = 1 : length(x01)
                 
                 x_pxC1 = x01(ixy);
@@ -591,15 +562,11 @@ for iP = 1 : 1 : length(structPotentialPairs)
         end
     end
 end
-% axis([crossP(1)-10 crossP(1)+10 crossP(2)-10 crossP(2)+10 crossP(3)-10 crossP(3)+10])
 
 %axis equal
-toc
 c = clock; fprintf('rays crossed at %0.2dh%0.2dm\n',c(4),c(5))
 
-
-
-%% plotting the result in 3D
+%% STEP 7 - plotting the result in 3D
 h3D = figure('defaultAxesFontSize',20); box on, hold on
 view(3)
 histx3D = [];
@@ -626,7 +593,15 @@ ylabel('y')
 zlabel('z')
 % axis([-300 300 -20 130 17 24])
 
-%% DEBUGGING ZONE:
+
+
+
+
+
+
+%% 000 - DEBUGGING ZONE:
+%someTrajectories = struct();
+nTraj_gi = length(someTrajectories) + 1;
 
 % 1 . choose two trajectories
 figure, hold on
@@ -693,6 +668,9 @@ plot(xC1,yC1,'-oy')
 %pause(2)
 %close all
 
+someTrajectories(nTraj_gi).itraj1 = itraj1;
+someTrajectories(nTraj_gi).itraj2 = itraj2;
+
 % cross the two choosen rays 
 clear x01 y01 x02 y02 x02incam01 y02incam01
 
@@ -717,17 +695,23 @@ for ixy = 1 : length(x01)
     x_pxC2 = x02(ixy);
     y_pxC2 = y02(ixy);
     
-    crossP = crossRaysonFire(CalibFileCam1,CalibFileCam2,x_pxC1,y_pxC1,x_pxC2,y_pxC2,Ttype);
-    crossP
+    [crossP,D] = crossRaysonFire(CalibFileCam1,CalibFileCam2,x_pxC1,y_pxC1,x_pxC2,y_pxC2,Ttype);
     if length(crossP)>0
-        %     figure(h3D), hold on
-             plot3(crossP(1),crossP(2),crossP(3),'og')
-        structPotentialPairs(iP).x3D(ixy) = crossP(1);
-        structPotentialPairs(iP).y3D(ixy) = crossP(2);
-        structPotentialPairs(iP).z3D(ixy) = crossP(3);
+             someTrajectories(nTraj_gi).x3D(ixy) = crossP(1);
+             someTrajectories(nTraj_gi).y3D(ixy) = crossP(2);
+             someTrajectories(nTraj_gi).z3D(ixy) = crossP(3);
+             someTrajectories(nTraj_gi).D(ixy) = D;
     end
 end
-%%
+
+figure, hold on
+for itraj3D = 1 : length(someTrajectories)
+plot3([someTrajectories(itraj3D).x3D],...
+      [someTrajectories(itraj3D).y3D],...
+      [someTrajectories(itraj3D).z3D],'-og')
+end
+view(3)
+%% 000 - DEBUGGING ZONE:
 figure
 histogram(histx3D)
 title('x')
@@ -737,7 +721,7 @@ title('y')
 figure
 histogram(histz3D)
 title('z')
-%% show two trajectories
+%% 000 - DEBUGGING ZONE: show two trajectories
 figure, hold on
 for iP = 1 : length(structPotentialPairs)
     if structPotentialPairs(iP).d > 15
@@ -767,13 +751,13 @@ end
 
 
 
-%% DEBUGGING THE Ray Crossing
+%% 000 - DEBUGGING ZONE: DEBUGGING THE Ray Crossing
 iexpe = 3;
 CalibFile = allExpeStrct(iexpe).CalibFile;
 calibTemp = load(CalibFile,'calib'); calib = calibTemp.calib;
 CalibFileCam1 = calib(:,1);
 CalibFileCam2 = calib(:,2);
-%%
+%% 000 - DEBUGGING ZONE: ginput on the calibration mire
 x_pxC1 = 440;
 y_pxC1 = 546;
 x_pxC2 = 528;
@@ -837,7 +821,7 @@ for ic = 1 : 2
         y_pxC2 = Yst(ip2);
     end
 end
-% JE SUIS ICI
+
 Ttype  = 'T3'; % T1 T3
 %[P,V,XYZ]=findRaysDarcy02(CalibFileCam1,x_pxC1,y_pxC1,Ttype);
 %[P,V,XYZ]=findRaysDarcy02(CalibFileCam2,x_pxC2,y_pxC2,Ttype);
@@ -846,7 +830,7 @@ crossP = crossRaysonFire(CalibFileCam1,CalibFileCam2,x_pxC1,y_pxC1,x_pxC2,y_pxC2
 %fprintf(,crossP(1,1),crossP(1,2),crossP(1,3))
 fprintf('x_pxC1: %3.3f, y_pxC1: %3.3f x_pxC2: %3.3f y_pxC2: %3.3f \ncrossP: x: %3.3f , y: %3.3f , z: %3.3f \n',...
     x_pxC1, y_pxC1, x_pxC2, y_pxC2, crossP(1),crossP(2),crossP(3))
-%% 
+%% 000 - DEBUGGING ZONE:
 for il = 1 : size(xyCam1Cam2,1)
     x_pxC1 = xyCam1Cam2(il,1);
     y_pxC1 = xyCam1Cam2(il,2);
@@ -1296,6 +1280,47 @@ StitchedTraj = Stitching(session,nameExpe,trackName,dfmax,dxmax,dvmax,lmin);
 
 
 
+%% Test on 2021 05 28 experiment
+figure
+plot(Camera0_FIJI(:,1),Camera0_FIJI(:,2),'-ob')
+plot(Camera1_FIJI(:,1),Camera1_FIJI(:,2),'ob')
+
+%%
+FIJIrt= struct(); % fiji rapid test
+ip3D = 0;
+for ipcam0 = 1 : size(Camera0_FIJI,1)
+    % find in the other camera if there is points at the same time
+    listTestPoints = find(Camera0_FIJI(ipcam0,3) == Camera1_FIJI(:,3));
+    for iOK = 1 : length(listTestPoints)
+        x_pxC1 = Camera0_FIJI(ipcam0,1);
+        y_pxC1 = Camera0_FIJI(ipcam0,2);
+        x_pxC2 = Camera1_FIJI(listTestPoints(iOK),1);
+        y_pxC2 = Camera1_FIJI(listTestPoints(iOK),1);
+        clear crossP D
+        [crossP,D] = crossRaysonFire(CalibFileCam1,CalibFileCam2,x_pxC1,y_pxC1,x_pxC2,y_pxC2,Ttype);
+        if size(crossP,1)
+            ip3D = ip3D + 1;
+            FIJIrt.x3D(ip3D) = crossP(1);
+            FIJIrt.y3D(ip3D) = crossP(2);
+            FIJIrt.z3D(ip3D) = crossP(3);
+            FIJIrt.t(ip3D)   = Camera0_FIJI(ipcam0,3);
+            FIJIrt.D(ip3D)   = D;
+        end
+    end
+end
+%%
+colT = jet(500);
+figure, hold on
+for ip = 1 : length([FIJIrt.x3D])
+    plot3(FIJIrt.x3D(ip),FIJIrt.y3D(ip),FIJIrt.z3D(ip),'o',...
+        'markerFaceColor',colT(FIJIrt.t(ip),:),...
+        'markerEdgeColor',colT(FIJIrt.t(ip),:))
+end
+view(3)
+box on
+xlabel('x')
+ylabel('y')
+zlabel('z')
 %% FUNCTIONS 
 
 %%
@@ -1359,13 +1384,14 @@ for it = 1 : size(M,3)
         % refine at subpixel precision
         Im = zeros(size(Im01,1),size(Im01,2),class(Im01));
         Im(:,:) = Im01(:,:,it);
-        clear xpkfnd ypkfnd Ip
-        Ip = zeros(2*Nwidth+1,2*Nwidth+1,'double');
-        xpkfnd = CC(it).xyRAW(ixy,1);
-        ypkfnd = CC(it).xyRAW(ixy,2);
-        Ip = double(Im(ypkfnd-Nwidth:ypkfnd+Nwidth,xpkfnd-Nwidth:xpkfnd+Nwidth));
-        CC(it).xy(ixy,1) = xpkfnd + 0.5*log(Ip(2,3)/Ip(2,1))/(log((Ip(2,2)*Ip(2,2))/(Ip(2,1)*Ip(2,3))));
-        CC(it).xy(ixy,2) = ypkfnd + 0.5*log(Ip(3,2)/Ip(1,2))/(log((Ip(2,2)*Ip(2,2))/(Ip(1,2)*Ip(3,2))));
+
+        %         clear xpkfnd ypkfnd Ip
+%         Ip = zeros(2*Nwidth+1,2*Nwidth+1,'double');
+%         xpkfnd = CC(it).xyRAW(ixy,1);
+%         ypkfnd = CC(it).xyRAW(ixy,2);
+%         Ip = double(Im(ypkfnd-Nwidth:ypkfnd+Nwidth,xpkfnd-Nwidth:xpkfnd+Nwidth));
+%         CC(it).xy(ixy,1) = xpkfnd + 0.5*log(Ip(2,3)/Ip(2,1))/(log((Ip(2,2)*Ip(2,2))/(Ip(2,1)*Ip(2,3))));
+%         CC(it).xy(ixy,2) = ypkfnd + 0.5*log(Ip(3,2)/Ip(1,2))/(log((Ip(2,2)*Ip(2,2))/(Ip(1,2)*Ip(3,2))));
 
     end
 end
@@ -1484,8 +1510,8 @@ end
 end
 
 %% crossRaysonFire
-function crossP = crossRaysonFire(CalibFileCam1,CalibFileCam2,x_pxC1,y_pxC1,x_pxC2,y_pxC2,Ttype)
-
+function [crossP,D] = crossRaysonFire(CalibFileCam1,CalibFileCam2,x_pxC1,y_pxC1,x_pxC2,y_pxC2,Ttype)
+D = 'nan';
 % % plane 11
 % x_pxC1 = 396;
 % y_pxC1 = 899;
