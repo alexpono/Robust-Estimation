@@ -7,8 +7,9 @@ if strcmp(name,'DESKTOP-3ONLTD9')
     cd(strcat('C:\Users\Lenovo\Jottacloud\RECHERCHE\Projets\21_IFPEN\',...
         'manips\expe_2021_05_06_calibration_COPY\images4calibration'))
 elseif strcmp(name,'DARCY')
-    cd('D:\IFPEN\IFPEN_manips\expe_2021_05_06_calibration\reorderCalPlanes4test')
-    %cd('C:\Users\darcy\Desktop\git\Robust-Estimation\calibrationImagesTraining01')
+    % cd('D:\IFPEN\IFPEN_manips\expe_2021_05_06_calibration\reorderCalPlanes4test')
+    cd('D:\IFPEN\IFPEN_manips\expe_2021_05_28_calibration_in_air\forCalib')
+    % cd('C:\Users\darcy\Desktop\git\Robust-Estimation\calibrationImagesTraining01')
 end
 
 zPlane = [00:5:40]; % [00:05:40]; % mm
@@ -89,10 +90,10 @@ for i = 1 : length(listNames)
     set(gcf,'position',[400 48 900 900])
     stats = regionprops(BW,'Centroid','Area','boundingbox','perimeter','convexHull');
     clear iKill Xst Yst
-    iKill = find([stats.Area] < 500);
+    iKill = find([stats.Area] < 100);
     stats(iKill) = [];
     clear iKill
-    iKill = find([stats.Area] > 2000);
+    iKill = find([stats.Area] > 1700);
     stats(iKill) = [];
     clear iKill
     iKill = [];
