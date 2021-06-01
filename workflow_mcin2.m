@@ -59,7 +59,7 @@ allTraj = struct();
 maxdist = allExpeStrct(iexpe).maxdist;
 longmin = allExpeStrct(iexpe).longmin;
 c1 = clock;
-for iSeq = 35:36  % loop on images sequences
+for iSeq = 37:38%35:36  % loop on images sequences
     clear trajArray_loc tracks_loc CCout
     [trajArray_loc,tracks_loc,CCout,M] = ...,
         DARCY02_findTracks(allExpeStrct,iexpe,iSeq,maxdist,longmin,'figures','yes');
@@ -79,8 +79,8 @@ CalibFile = allExpeStrct(iexpe).CalibFile;
 him = size(M,1); % 1152;
 wim = size(M,2); % 1152;
 clear CCtemp CC1 CC2 totalnFrames
-CC1 = allTraj(35).CC; % CCtemp.CC;
-CC2 = allTraj(36).CC; % CCtemp.CC;
+CC1 = allTraj(37).CC; % CCtemp.CC;
+CC2 = allTraj(38).CC; % CCtemp.CC;
 totalnFrames = size(CC1,2);
 
 %% STEP 3 - removing the NaNs for all t
@@ -312,8 +312,8 @@ end
 
 maxdist = 3;
 longmin = 5;
-[trajArray_CAM1,tracks_CAM1]=TAN_track2d(part_cam1,maxdist,longmin);
-[trajArray_CAM1,tracks_CAM1]=TAN_track2d(part_cam1,maxdist,longmin);
+[trajArray_CAM1,tracks_CAM1]          = TAN_track2d(part_cam1,maxdist,longmin);
+[trajArray_CAM2RAW,tracks_CAM2RAW] = TAN_track2d(part_cam2RAW,maxdist,longmin);
 
 [trajArray_CAM2,tracks_CAM2]=TAN_track2d(part_cam2,maxdist,longmin);
 
@@ -622,20 +622,165 @@ zlabel('z')
 
 
 %% 000 - DEBUGGING ZONE:
+
+colorPlots = jet(2001);
+
 %someTrajectories = struct();
-nTraj_gi = length(someTrajectories) + 1;
+%nTraj_gi = length(someTrajectories) + 1;
 %nTraj_gi = 1;
 % 1 . choose two trajectories
-figure, hold on
+figure, hold on, box on
 for ic = 1 : length(trajArray_CAM1)
-    if trajArray_CAM1(ic).L > 20
+    if length(trajArray_CAM1(ic).track) > 40
         clear xC1 yC1
         xC1 = [trajArray_CAM1(ic).track(:,1)];
         yC1 = [trajArray_CAM1(ic).track(:,2)];
-        plot(xC1,yC1,'-ob')
+        plot(xC1,yC1,'-ob',...
+            'markerEdgeColor','none',...
+            'markerFaceColor',colorPlots(min(trajArray_CAM1(ic).track(:,3)),:))
     end
 end
+set(gca,'ydir','reverse')
+set(gcf,'position',[26   160   915   809])
+title('cam01')
 
+figure, hold on, box on
+for ic = 1 : length(trajArray_CAM2RAW)
+    if length(trajArray_CAM2RAW(ic).track) > 40
+        clear xC2 yC2
+        xC2 = [trajArray_CAM2RAW(ic).track(:,1)];
+        yC2 = [trajArray_CAM2RAW(ic).track(:,2)];
+        plot(xC2,yC2,'-ob',...
+            'markerEdgeColor','none',...
+            'markerFaceColor',colorPlots(min(trajArray_CAM2RAW(ic).track(:,3)),:))
+    end
+end
+set(gca,'ydir','reverse')
+set(gcf,'position',[26   160   915   809])
+title('cam02')
+%% cross rays with trajectory selecte one by one by hand
+someTrajectories = struct();
+
+for iselTraj = 1 : size(cam1cam2RAW,1)
+    xt1 = cam1cam2RAW(iselTraj,1);
+    yt1 = cam1cam2RAW(iselTraj,2);
+    xt2 = cam1cam2RAW(iselTraj,3);
+    yt2 = cam1cam2RAW(iselTraj,4);
+    % find the trajectory in camera 01
+    clear dgi
+    dgi = nan(length(trajArray_CAM1),1);
+    for ic = 1 : length(trajArray_CAM1)
+        clear xC1 yC1 dd
+        xC1 = [trajArray_CAM1(ic).track(:,1)];
+        yC1 = [trajArray_CAM1(ic).track(:,2)];
+        dd = sqrt((xC1-xt1).^2 + (yC1-yt1).^2);
+        dgi(ic) = min(dd);
+    end
+    [~,itraj1] = min(dgi);
+    figure
+    plot([trajArray_CAM1(itraj1).track(:,1)],[trajArray_CAM1(itraj1).track(:,2)],'-ob')
+    % find the trajectory in camera 02
+    clear dgi
+    dgi = nan(length(trajArray_CAM2RAW),1);
+    for ic = 1 : length(trajArray_CAM2RAW)
+        clear xC2 yC2 dd2
+        xC2 = [trajArray_CAM2RAW(ic).track(:,1)];
+        yC2 = [trajArray_CAM2RAW(ic).track(:,2)];
+        dd2 = sqrt((xC2-xt2).^2 + (yC2-yt2).^2);
+        dgi(ic) = min(dd2);
+    end
+    [~,itraj2] = min(dgi);
+    
+    figure
+    plot([trajArray_CAM2RAW(itraj2).track(:,1)],[trajArray_CAM2RAW(itraj2).track(:,2)],'-ob')
+    
+    someTrajectories(iselTraj).itraj1 = itraj1;
+    someTrajectories(iselTraj).itraj2 = itraj2;
+    
+    % cross the two choosen rays
+    clear x01 y01 x02 y02 x02incam01 y02incam01
+    tminCAM01 = min(trajArray_CAM1(itraj1).track(:,3));
+    tmaxCAM01 = max(trajArray_CAM1(itraj1).track(:,3));
+    tminCAM02 = min(trajArray_CAM2RAW(itraj2).track(:,3));
+    tmaxCAM02 = max(trajArray_CAM2RAW(itraj2).track(:,3));
+    [A,B,C] = intersect([tminCAM01:tmaxCAM01],[tminCAM02:tmaxCAM02]);
+    
+    A;
+    if A
+        clear x01 y01 x02 y02
+        x01 = trajArray_CAM1(itraj1).track(min(B):max(B),1);
+        y01 = trajArray_CAM1(itraj1).track(min(B):max(B),2);
+        x02 = trajArray_CAM2RAW(itraj2).track(min(C):max(C),1);
+        y02 = trajArray_CAM2RAW(itraj2).track(min(C):max(C),2);
+        
+        clear x_pxC1 y_pxC1 x_pxC2 y_pxC2
+        for ixy = 1 : length(x01)
+            
+            x_pxC1 = x01(ixy);
+            y_pxC1 = y01(ixy);
+            x_pxC2 = x02(ixy);
+            y_pxC2 = y02(ixy);
+            
+            [crossP,D] = crossRaysonFire(CalibFileCam2,CalibFileCam1,x_pxC1,y_pxC1,x_pxC2,y_pxC2,Ttype);
+            if length(crossP)>0
+                someTrajectories(iselTraj).x3D(ixy) = crossP(1);
+                someTrajectories(iselTraj).y3D(ixy) = crossP(2);
+                someTrajectories(iselTraj).z3D(ixy) = crossP(3);
+                someTrajectories(iselTraj).D(ixy) = D;
+            end
+        end
+    end
+    
+    
+end
+%%
+
+% plot the result
+figure, hold on
+for itraj3D = 1 : size(cam1cam2RAW,1)
+    itraj3D
+    plot3([someTrajectories(itraj3D).x3D],...
+        [someTrajectories(itraj3D).y3D],...
+        [someTrajectories(itraj3D).z3D],'og')
+end
+view(3)
+xlabel('x')
+ylabel('y')
+zlabel('z')
+%%
+figure, box on, hold on
+someTrajectories = struct();
+iiii = -1;
+for ixy = 1 : length(zProjPoints)/2
+         iiii = iiii+2;    
+            x_pxC1 = zProjPoints(iiii,1);
+            y_pxC1 = zProjPoints(iiii,2);
+            plot(x_pxC1,y_pxC1,'ob')
+            x_pxC2 = zProjPoints(iiii+1,1);
+            y_pxC2 = zProjPoints(iiii+1,2);
+            
+            [crossP,D] = crossRaysonFire(CalibFileCam2,CalibFileCam1,x_pxC1,y_pxC1,x_pxC2,y_pxC2,Ttype);
+            if length(crossP)>0
+                someTrajectories(ixy).x3D(1) = crossP(1);
+                someTrajectories(ixy).y3D(1) = crossP(2);
+                someTrajectories(ixy).z3D(1) = crossP(3);
+                someTrajectories(ixy).D(1) = D;
+            end
+        end
+% plot the result
+figure, hold on
+for itraj3D = 1 : length(zProjPoints)/2
+    itraj3D
+    plot3([someTrajectories(itraj3D).x3D],...
+        [someTrajectories(itraj3D).y3D],...
+        [someTrajectories(itraj3D).z3D],'og')
+end
+view(3)
+xlabel('x')
+ylabel('y')
+zlabel('z')
+
+%%
 % for ic = 1 : length(trajArray_CAM2)
 %     if trajArray_CAM2(ic).L > 20
 %         clear xC1 yC1
@@ -700,7 +845,7 @@ for iic = 1 : length(listic)
         dd = sqrt((xC2-xgi).^2 + (yC2-ygi).^2);
         dgi2(iic) = min(dd);
 end
-[~,iitraj2] = min(dgi2);2+2
+[~,iitraj2] = min(dgi2);
 
 itraj2 = listic(iitraj2);
 clear xC1 yC1
@@ -715,7 +860,6 @@ someTrajectories(nTraj_gi).itraj2 = itraj2;
 
 % cross the two choosen rays
 clear x01 y01 x02 y02 x02incam01 y02incam01
-
 tminCAM01 = min(trajArray_CAM1(itraj1).track(:,3));
 tmaxCAM01 = max(trajArray_CAM1(itraj1).track(:,3));
 tminCAM02 = min(trajArray_CAM2(itraj2).track(:,3));
@@ -1661,18 +1805,6 @@ end
 %% crossRaysonFire
 function [crossP,D] = crossRaysonFire(CalibFileCam1,CalibFileCam2,x_pxC1,y_pxC1,x_pxC2,y_pxC2,Ttype)
 D = 'nan';
-% % plane 11
-% x_pxC1 = 396;
-% y_pxC1 = 899;
-% x_pxC2 = 994;
-% y_pxC2 = 899;
-%
-% % plane 01
-% % x_pxC1 = 502;
-% % y_pxC1 = 878;
-% % x_pxC2 = 856;
-% % y_pxC2 = 877;
-
 
 [P1,V1]=findRaysDarcy02(CalibFileCam1,x_pxC1,y_pxC1,Ttype);
 [P2,V2]=findRaysDarcy02(CalibFileCam2,x_pxC2,y_pxC2,Ttype);
