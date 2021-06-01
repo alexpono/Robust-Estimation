@@ -15,6 +15,23 @@ load('all_IFPEN_DARCY02_experiments.mat')
 %% STEP 0 - Defining paths using list of experiments stored in sturture allExpeStrct
 fprintf('define folders and experiment name\n')
 
+iexpe = 2;
+
+allExpeStrct(iexpe).type        = 'experiment'; % experiment / calibration
+allExpeStrct(iexpe).name        = 'expe20210505_run3';
+allExpeStrct(iexpe).inputFolder = ...
+    strcat('D:\IFPEN\IFPEN_manips\expe_2021_05_05\run03\');
+allExpeStrct(iexpe).analysisFolder = ...
+    strcat('D:\pono\IFPEN\analysisExperiments\analysis_expe_20210505\');
+allExpeStrct(iexpe).CalibFile = ...
+    strcat('D:\IFPEN\IFPEN_manips\expe_2021_05_06_calibration\reorderCalPlanes4test\calib.mat');
+allExpeStrct(iexpe).centerFinding_th = 2; % automatiser la définition de ces paramètres?
+allExpeStrct(iexpe).centerFinding_sz = 2; % automatiser la définition de ces paramètres?
+allExpeStrct(iexpe).maxdist = 3;          % for Benjamin tracks function:
+% max distances between particules from frame to frame
+allExpeStrct(iexpe).longmin = 10;         % for Benjamin tracks function:
+% minimum number of points of a trajectory
+
 iexpe = 3;
 
 allExpeStrct(iexpe).type        = 'experiment'; % experiment / calibration
@@ -35,7 +52,7 @@ allExpeStrct(iexpe).longmin = 10;         % for Benjamin tracks function:
 
 
 %% STEP 1 - findTracks
-iexpe = 3;
+iexpe = 2; % 1 / 2 / 3
 
 allTraj = struct();
 
@@ -43,13 +60,13 @@ maxdist = allExpeStrct(iexpe).maxdist;
 longmin = allExpeStrct(iexpe).longmin;
 c1 = clock;
 for iSeq = 35:36  % loop on images sequences
-clear trajArray_loc tracks_loc CCout
-[trajArray_loc,tracks_loc,CCout,M] = ...,
-    DARCY02_findTracks(allExpeStrct,iexpe,iSeq,maxdist,longmin,'figures','yes');
-allTraj(iSeq).trajArray = trajArray_loc;
-allTraj(iSeq).tracks    = tracks_loc;
-allTraj(iSeq).CC        = CCout;
-
+    clear trajArray_loc tracks_loc CCout
+    [trajArray_loc,tracks_loc,CCout,M] = ...,
+        DARCY02_findTracks(allExpeStrct,iexpe,iSeq,maxdist,longmin,'figures','yes');
+    allTraj(iSeq).trajArray = trajArray_loc;
+    allTraj(iSeq).tracks    = tracks_loc;
+    allTraj(iSeq).CC        = CCout;
+    
 end
 c2 = clock;
 e = etime(c2,c1)
@@ -112,7 +129,7 @@ imagesc(20*ACC2)%, colormap gray
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% normxcorr2 pass 01 (on a large window) 
+% normxcorr2 pass 01 (on a large window)
 close all
 monPos = get(0,'MonitorPositions');
 wmon=monPos(end,3); hmon=monPos(end,4);
@@ -281,6 +298,11 @@ for it = 1 : size(CC1,2)
     part_cam1(it).intensity = 0; %mI;
     
     clear cam2X cam2Y
+    part_cam2RAW(it).pos(:,1) = [CC2(it).X]; % out_CAM1(:,1);
+    part_cam2RAW(it).pos(:,2) = [CC2(it).Y]; % out_CAM1(:,2);
+    part_cam2RAW(it).pos(:,3) = ones(length([CC2(it).X]),1)*it;
+    part_cam2RAW(it).intensity = 0; %mI;
+    
     [cam2X,cam2Y] = transformPointsForward(tform1,CC2(it).X,CC2(it).Y);
     part_cam2(it).pos(:,1) = [cam2X]; % out_CAM1(:,1);
     part_cam2(it).pos(:,2) = [cam2Y]; % out_CAM1(:,2);
@@ -291,16 +313,17 @@ end
 maxdist = 3;
 longmin = 5;
 [trajArray_CAM1,tracks_CAM1]=TAN_track2d(part_cam1,maxdist,longmin);
+[trajArray_CAM1,tracks_CAM1]=TAN_track2d(part_cam1,maxdist,longmin);
 
 [trajArray_CAM2,tracks_CAM2]=TAN_track2d(part_cam2,maxdist,longmin);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% keep only long trajectories 
+% keep only long trajectories
 ltraj = 5; % = 10
 clear ikill01 ikill02
 for itraj1 = 1 : length(trajArray_CAM1)
-    lt1(itraj1) = size(trajArray_CAM1(itraj1).track,1) ; 
+    lt1(itraj1) = size(trajArray_CAM1(itraj1).track,1) ;
 end
 ikill01 = find(lt1<ltraj);
 % figure
@@ -309,7 +332,7 @@ ikill01 = find(lt1<ltraj);
 % plot(10*[1 1],[0 400],'--k')
 
 for itraj2 = 1 : length(trajArray_CAM2)
-    lt2(itraj2) = size(trajArray_CAM2(itraj2).track,1) ; 
+    lt2(itraj2) = size(trajArray_CAM2(itraj2).track,1) ;
 end
 ikill02 = find(lt2<ltraj);
 % figure
@@ -348,7 +371,7 @@ for itrj02 =  1 :  length(trajArray_CAM2)
     xtCAM02 = trajArray_CAM2(itrj02).track(:,1);
     ytCAM02 = trajArray_CAM2(itrj02).track(:,2);
     
-    trajArray_CAM2(itrj02).L   = sqrt( (max(xtCAM02)-min(xtCAM02))^2 + (max(ytCAM02)-min(ytCAM02))^2);
+    trajArray_CAM2(itrj02).L  = sqrt( (max(xtCAM02)-min(xtCAM02))^2 + (max(ytCAM02)-min(ytCAM02))^2);
     trajArray_CAM2(itrj02).x0 = mean(xtCAM02);
     trajArray_CAM2(itrj02).y0 = mean(ytCAM02);
     
@@ -388,24 +411,24 @@ for itrj01 = 1 : length(trajArray_CAM1)
     for itrj = 1 : length(trajArray_CAM2)
         
         if listPotTraj(itrj01,itrj) < 0
-        tminCAM02 = min(trajArray_CAM2(itrj).track(:,3));
-        tmaxCAM02 = max(trajArray_CAM2(itrj).track(:,3));
-        [A,B,C] = intersect([tminCAM01:tmaxCAM01],[tminCAM02:tmaxCAM02]);
-        if A
-            % camera 2
-            clear xt yt
-            xt = trajArray_CAM2(itrj).track(:,1);
-            yt = trajArray_CAM2(itrj).track(:,2);
-            
-            %plot(xtCAM01,ytCAM01,'-b','lineWidth',2)
-            %plot(xt,yt,'-r','lineWidth',2)
-            ipairs = ipairs + 1;
-            structPotentialPairs(ipairs).trajCAM01 = itrj01;
-            structPotentialPairs(ipairs).trajCAM02 = itrj;
-            structPotentialPairs(ipairs).txA = A;
-            structPotentialPairs(ipairs).tCAM01 = B;
-            structPotentialPairs(ipairs).tCAM02 = C;
-        end
+            tminCAM02 = min(trajArray_CAM2(itrj).track(:,3));
+            tmaxCAM02 = max(trajArray_CAM2(itrj).track(:,3));
+            [A,B,C] = intersect([tminCAM01:tmaxCAM01],[tminCAM02:tmaxCAM02]);
+            if A
+                % camera 2
+                clear xt yt
+                xt = trajArray_CAM2(itrj).track(:,1);
+                yt = trajArray_CAM2(itrj).track(:,2);
+                
+                %plot(xtCAM01,ytCAM01,'-b','lineWidth',2)
+                %plot(xt,yt,'-r','lineWidth',2)
+                ipairs = ipairs + 1;
+                structPotentialPairs(ipairs).trajCAM01 = itrj01;
+                structPotentialPairs(ipairs).trajCAM02 = itrj;
+                structPotentialPairs(ipairs).txA = A;
+                structPotentialPairs(ipairs).tCAM01 = B;
+                structPotentialPairs(ipairs).tCAM02 = C;
+            end
         end
     end
     %axis([min(xtCAM01) max(xtCAM01) min(ytCAM01) max(ytCAM01)])
@@ -467,41 +490,40 @@ end
 % end
 % show pairs one by one
 for iP = 1 : length(structPotentialPairs) % [69,102,108,114,120]
-
-itrj01 = structPotentialPairs(iP).trajCAM01;
-itrj02 = structPotentialPairs(iP).trajCAM02;
-
-clear x01 y01 x02 y02
-x01 = trajArray_CAM1(itrj01).track(:,1);
-y01 = trajArray_CAM1(itrj01).track(:,2);
-x02 = trajArray_CAM2(itrj02).track(:,1);
-y02 = trajArray_CAM2(itrj02).track(:,2);
-
-it1tt = [structPotentialPairs(iP).tCAM01];
-it2tt = [structPotentialPairs(iP).tCAM02];
-
-
+    
+    itrj01 = structPotentialPairs(iP).trajCAM01;
+    itrj02 = structPotentialPairs(iP).trajCAM02;
+    
+    clear x01 y01 x02 y02
+    x01 = trajArray_CAM1(itrj01).track(:,1);
+    y01 = trajArray_CAM1(itrj01).track(:,2);
+    x02 = trajArray_CAM2(itrj02).track(:,1);
+    y02 = trajArray_CAM2(itrj02).track(:,2);
+    
+    it1tt = [structPotentialPairs(iP).tCAM01];
+    it2tt = [structPotentialPairs(iP).tCAM02];
+    
     Dx01 = structPotentialPairs(iP).Dx01;
     Dx02 = structPotentialPairs(iP).Dx02;
     Dy01 = structPotentialPairs(iP).Dy01;
     Dy02 = structPotentialPairs(iP).Dy02;
     ddd  = structPotentialPairs(iP).d;
     
-if ddd < 20 && (abs(Dx01-Dx02)<5) && (abs(Dy01-Dy02)<5)
-    %plot(x01,y01,'-b','lineWidth',2)
-    %plot(x02,y02,'-r','lineWidth',2)
-    structPotentialPairs(iP).matched = 1;
-%     for it = 1 : length([structPotentialPairs(iP).tCAM01])
-%         it1 = structPotentialPairs(iP).tCAM01(it);
-%         it2 = structPotentialPairs(iP).tCAM02(it);
-%         plot([x01(it1),x02(it2)],[y01(it1),y02(it2)],'-g')
-%     end
-else
-    
-    structPotentialPairs(iP).matched = 0;
-end
-%title(sprintf('iP: %0.0f, d: %0.0f, Dx01: %0.0f, Dx02: %0.0f, Dy01: %0.0f, Dy02: %0.0f ',...
-%    iP,structPotentialPairs(iP).d,Dx01, Dx02, Dy01, Dy02))
+    if ddd < 20 && (abs(Dx01-Dx02)<5) && (abs(Dy01-Dy02)<5)
+        %plot(x01,y01,'-b','lineWidth',2)
+        %plot(x02,y02,'-r','lineWidth',2)
+        structPotentialPairs(iP).matched = 1;
+        %     for it = 1 : length([structPotentialPairs(iP).tCAM01])
+        %         it1 = structPotentialPairs(iP).tCAM01(it);
+        %         it2 = structPotentialPairs(iP).tCAM02(it);
+        %         plot([x01(it1),x02(it2)],[y01(it1),y02(it2)],'-g')
+        %     end
+    else
+        
+        structPotentialPairs(iP).matched = 0;
+    end
+    %title(sprintf('iP: %0.0f, d: %0.0f, Dx01: %0.0f, Dx02: %0.0f, Dy01: %0.0f, Dy02: %0.0f ',...
+    %    iP,structPotentialPairs(iP).d,Dx01, Dx02, Dy01, Dy02))
 end
 toc
 %ax = gca;
@@ -519,7 +541,7 @@ ce = clock; fprintf('done at %0.2dh%0.2dm in %0.0f s \n',c(4),c(5), etime(ce,ci)
 %% STEP 6 - Crossing the rays
 c = clock; fprintf('on croise les doigts at %0.2dh%0.2dm\n',c(4),c(5))
 
-Ttype = 'T1';
+Ttype = 'T3';
 tic
 h3D = figure('defaultAxesFontSize',20); box on, hold on, view(3)
 xlabel('x'), ylabel('y'), zlabel('z')
@@ -529,7 +551,7 @@ CalibFileCam1 = calib(:,1);
 CalibFileCam2 = calib(:,2);
 
 for iP = 1 : 1 : length(structPotentialPairs)
-    if structPotentialPairs(iP).d > 15
+    if structPotentialPairs(iP).d < 15
         fprintf('progress: %0.0f / %0.0f \n',iP,length(structPotentialPairs) )
         if 1%structPotentialPairs(iP).matched == 1
             itrj01 = structPotentialPairs(iP).trajCAM01;
@@ -602,31 +624,31 @@ zlabel('z')
 %% 000 - DEBUGGING ZONE:
 %someTrajectories = struct();
 nTraj_gi = length(someTrajectories) + 1;
-
+%nTraj_gi = 1;
 % 1 . choose two trajectories
 figure, hold on
 for ic = 1 : length(trajArray_CAM1)
-    if trajArray_CAM1(ic).L > 15
-    clear xC1 yC1
-xC1 = [trajArray_CAM1(ic).track(:,1)];
-yC1 = [trajArray_CAM1(ic).track(:,2)];  
-plot(xC1,yC1,'-ob')
+    if trajArray_CAM1(ic).L > 20
+        clear xC1 yC1
+        xC1 = [trajArray_CAM1(ic).track(:,1)];
+        yC1 = [trajArray_CAM1(ic).track(:,2)];
+        plot(xC1,yC1,'-ob')
     end
 end
 
-for ic = 1 : length(trajArray_CAM2)
-    if trajArray_CAM2(ic).L > 15
-    clear xC1 yC1
-xC1 = [trajArray_CAM2(ic).track(:,1)];
-yC1 = [trajArray_CAM2(ic).track(:,2)];  
-plot(xC1,yC1,'-or')
-    end
-end
+% for ic = 1 : length(trajArray_CAM2)
+%     if trajArray_CAM2(ic).L > 20
+%         clear xC1 yC1
+%         xC1 = [trajArray_CAM2(ic).track(:,1)];
+%         yC1 = [trajArray_CAM2(ic).track(:,2)];
+%         plot(xC1,yC1,'-or')
+%     end
+% end
 
 % ginput to select a trajectory couple
 [xZ,yZ] = ginput(1);
-xlim([xZ-30 xZ+30])
-ylim([yZ-30 yZ+30])
+xlim([xZ-60 xZ+60])
+ylim([yZ-60 yZ+60])
 [xgi,ygi] = ginput(1);
 % find the trajectory in camera 01
 clear dgi
@@ -647,20 +669,40 @@ yC1 = [trajArray_CAM1(itraj1).track(:,2)];
 plot(xC1,yC1,'-og')
 
 
-[xgi,ygi] = ginput(1);
+
 % find the trajectory in camera 02
-clear dgi
-dgi2 = nan(length(trajArray_CAM2),1);
+% plot only trajectories with intersecting times:
+tminCAM01 = min(trajArray_CAM1(itraj1).track(:,3));
+tmaxCAM01 = max(trajArray_CAM1(itraj1).track(:,3));
+clear dgi2 listic
+listic = [];
 for ic = 1 : length(trajArray_CAM2)
-    if trajArray_CAM2(ic).L > 15
+    
+tminCAM02 = min(trajArray_CAM2(ic).track(:,3));
+tmaxCAM02 = max(trajArray_CAM2(ic).track(:,3));
+[A] = intersect([tminCAM01:tmaxCAM01],[tminCAM02:tmaxCAM02]);
+if A
+    listic = [listic,ic];
+        clear xC2 yC2
+        xC2 = [trajArray_CAM2(ic).track(:,1)];
+        yC2 = [trajArray_CAM2(ic).track(:,2)];
+        plot(xC2,yC2,'-or')
+    end
+end
+[xgi,ygi] = ginput(1);
+
+dgi2 = nan(length(trajArray_CAM2),1);
+for iic = 1 : length(listic)
+    ic = listic(iic);
         clear xC2 yC2 dd
         xC2 = [trajArray_CAM2(ic).track(:,1)];
         yC2 = [trajArray_CAM2(ic).track(:,2)];
         dd = sqrt((xC2-xgi).^2 + (yC2-ygi).^2);
-        dgi2(ic) = min(dd);
-    end
+        dgi2(iic) = min(dd);
 end
-[~,itraj2] = min(dgi2);
+[~,iitraj2] = min(dgi2);2+2
+
+itraj2 = listic(iitraj2);
 clear xC1 yC1
 xC1 = [trajArray_CAM2(itraj2).track(:,1)];
 yC1 = [trajArray_CAM2(itraj2).track(:,2)];
@@ -671,7 +713,7 @@ plot(xC1,yC1,'-oy')
 someTrajectories(nTraj_gi).itraj1 = itraj1;
 someTrajectories(nTraj_gi).itraj2 = itraj2;
 
-% cross the two choosen rays 
+% cross the two choosen rays
 clear x01 y01 x02 y02 x02incam01 y02incam01
 
 tminCAM01 = min(trajArray_CAM1(itraj1).track(:,3));
@@ -679,15 +721,17 @@ tmaxCAM01 = max(trajArray_CAM1(itraj1).track(:,3));
 tminCAM02 = min(trajArray_CAM2(itraj2).track(:,3));
 tmaxCAM02 = max(trajArray_CAM2(itraj2).track(:,3));
 [A,B,C] = intersect([tminCAM01:tmaxCAM01],[tminCAM02:tmaxCAM02]);
-        %
-        figure
-        hold on
+%
+figure
+hold on
+clear x01 y01 x02incam01 y02incam01 x02 y02
 x01 = trajArray_CAM1(itraj1).track(min(B):max(B),1);
 y01 = trajArray_CAM1(itraj1).track(min(B):max(B),2);
 x02incam01 = trajArray_CAM2(itraj2).track(min(C):max(C),1);
 y02incam01 = trajArray_CAM2(itraj2).track(min(C):max(C),2);
 [ x02, y02] = transformPointsInverse(tform1,x02incam01,y02incam01);
 
+clear x_pxC1 y_pxC1 x_pxC2 y_pxC2
 for ixy = 1 : length(x01)
     
     x_pxC1 = x01(ixy);
@@ -697,20 +741,23 @@ for ixy = 1 : length(x01)
     
     [crossP,D] = crossRaysonFire(CalibFileCam1,CalibFileCam2,x_pxC1,y_pxC1,x_pxC2,y_pxC2,Ttype);
     if length(crossP)>0
-             someTrajectories(nTraj_gi).x3D(ixy) = crossP(1);
-             someTrajectories(nTraj_gi).y3D(ixy) = crossP(2);
-             someTrajectories(nTraj_gi).z3D(ixy) = crossP(3);
-             someTrajectories(nTraj_gi).D(ixy) = D;
+        someTrajectories(nTraj_gi).x3D(ixy) = crossP(1);
+        someTrajectories(nTraj_gi).y3D(ixy) = crossP(2);
+        someTrajectories(nTraj_gi).z3D(ixy) = crossP(3);
+        someTrajectories(nTraj_gi).D(ixy) = D;
     end
 end
 
 figure, hold on
 for itraj3D = 1 : length(someTrajectories)
-plot3([someTrajectories(itraj3D).x3D],...
-      [someTrajectories(itraj3D).y3D],...
-      [someTrajectories(itraj3D).z3D],'-og')
+    plot3([someTrajectories(itraj3D).x3D],...
+        [someTrajectories(itraj3D).y3D],...
+        [someTrajectories(itraj3D).z3D],'-og')
 end
 view(3)
+xlabel('x')
+ylabel('y')
+zlabel('z')
 %% 000 - DEBUGGING ZONE:
 figure
 histogram(histx3D)
@@ -804,7 +851,7 @@ for ic = 1 : 2
         Xst(is) = stats(is).Centroid(1,1);
         Yst(is) = stats(is).Centroid(1,2);
     end
-    clear a b d 
+    clear a b d
     d = sqrt((xgi-Xst).^2+(ygi-Yst).^2);
     [a,b] = min(d);
     if ic == 1
@@ -836,10 +883,10 @@ for il = 1 : size(xyCam1Cam2,1)
     y_pxC1 = xyCam1Cam2(il,2);
     x_pxC2 = xyCam1Cam2(il,3);
     y_pxC2 = xyCam1Cam2(il,4);
-crossP = crossRaysonFire(CalibFileCam1,CalibFileCam2,x_pxC1,y_pxC1,x_pxC2,y_pxC2,Ttype);
-%fprintf(,crossP(1,1),crossP(1,2),crossP(1,3))
-fprintf('x_pxC1: %3.3f, y_pxC1: %3.3f x_pxC2: %3.3f y_pxC2: %3.3f \ncrossP: x: %3.3f , y: %3.3f , z: %3.3f \n',...
-    x_pxC1, y_pxC1, x_pxC2, y_pxC2, crossP(1),crossP(2),crossP(3))
+    crossP = crossRaysonFire(CalibFileCam1,CalibFileCam2,x_pxC1,y_pxC1,x_pxC2,y_pxC2,Ttype);
+    %fprintf(,crossP(1,1),crossP(1,2),crossP(1,3))
+    fprintf('x_pxC1: %3.3f, y_pxC1: %3.3f x_pxC2: %3.3f y_pxC2: %3.3f \ncrossP: x: %3.3f , y: %3.3f , z: %3.3f \n',...
+        x_pxC1, y_pxC1, x_pxC2, y_pxC2, crossP(1),crossP(2),crossP(3))
 end
 
 %% Testing crossing the rays with points on the calibration plate
@@ -906,7 +953,7 @@ for ixy = 1 : length(x01)
     
     if length(crossP)>0
         %     figure(h3D), hold on
-             plot3(crossP(1),crossP(2),crossP(3),'og')
+        plot3(crossP(1),crossP(2),crossP(3),'og')
         structPotentialPairs(iP).x3D(ixy) = crossP(1);
         structPotentialPairs(iP).y3D(ixy) = crossP(2);
         structPotentialPairs(iP).z3D(ixy) = crossP(3);
@@ -959,7 +1006,7 @@ figure('defaultAxesFontSize',20), hold on, box on
 %     xpos = [CC1(it).X];
 %     ypos = [CC1(it).Y];
 %     plot(xpos,ypos,'ob')
-%     
+%
 %     clear xpos ypos
 %     xpos = part_cam2(it).pos(:,1);
 %     ypos = part_cam2(it).pos(:,2);
@@ -994,7 +1041,7 @@ imageCorrelation(xm,ym,ACC1,ACC2,round(wti/2),filterOrder,'cleanC',dxPass01,dyPa
 
 %% STEP 6 - centers to rays - BLP
 %  vérifier qu'il n'y a pas de bug ici !!!!
-%  genre x et y inversés 
+%  genre x et y inversés
 
 tic
 camPV = struct();
@@ -1004,61 +1051,61 @@ CC1_1P_timecat.X = [];          CC2_1P_timecat.X = [];
 CC1_1P_timecat.Y = [];          CC2_1P_timecat.Y = [];
 for it = [10:30] % je combine ensemble des points de deux temps différents
     it
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%removing the NaNs
-CC1_1P = CC1;
-ikill = [];
-for ip = 1 : size(CC1_1P(it).X,2)
-    if isnan(CC1_1P(it).X(ip)) || isnan(CC1_1P(it).Y(ip))
-        ikill = [ikill,ip];
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %removing the NaNs
+    CC1_1P = CC1;
+    ikill = [];
+    for ip = 1 : size(CC1_1P(it).X,2)
+        if isnan(CC1_1P(it).X(ip)) || isnan(CC1_1P(it).Y(ip))
+            ikill = [ikill,ip];
+        end
     end
-end
-CC1_1P(it).X(ikill) = [];
-CC1_1P(it).Y(ikill) = [];
-% keeping only one particle for testing the code
-xmin = 149;
-xmax = 156;
-ymin = 800;
-ymax = 812;
-%removing 
-i2rmv_xmin = CC1_1P(it).X < xmin;
-i2rmv_xmax = CC1_1P(it).X > xmax;
-i2rmv_ymin = CC1_1P(it).Y < ymin;
-i2rmv_ymax = CC1_1P(it).Y > ymax;
-i2rmv = or(or(i2rmv_xmin,i2rmv_xmax),or(i2rmv_ymin,i2rmv_ymax));
-CC1_1P(it).X(i2rmv) = [];
-CC1_1P(it).Y(i2rmv) = [];
-%figure
-%plot(CC1_1P(it).X,CC1_1P(it).Y,'+r')
-
-CC2_1P = CC2;
-ikill = [];
-for ip = 1 : size(CC2_1P(it).X,2)
-    if isnan(CC2_1P(it).X(ip)) || isnan(CC2_1P(it).Y(ip))
-        ikill = [ikill,ip];
+    CC1_1P(it).X(ikill) = [];
+    CC1_1P(it).Y(ikill) = [];
+    % keeping only one particle for testing the code
+    xmin = 149;
+    xmax = 156;
+    ymin = 800;
+    ymax = 812;
+    %removing
+    i2rmv_xmin = CC1_1P(it).X < xmin;
+    i2rmv_xmax = CC1_1P(it).X > xmax;
+    i2rmv_ymin = CC1_1P(it).Y < ymin;
+    i2rmv_ymax = CC1_1P(it).Y > ymax;
+    i2rmv = or(or(i2rmv_xmin,i2rmv_xmax),or(i2rmv_ymin,i2rmv_ymax));
+    CC1_1P(it).X(i2rmv) = [];
+    CC1_1P(it).Y(i2rmv) = [];
+    %figure
+    %plot(CC1_1P(it).X,CC1_1P(it).Y,'+r')
+    
+    CC2_1P = CC2;
+    ikill = [];
+    for ip = 1 : size(CC2_1P(it).X,2)
+        if isnan(CC2_1P(it).X(ip)) || isnan(CC2_1P(it).Y(ip))
+            ikill = [ikill,ip];
+        end
     end
-end
-CC2_1P(it).X(ikill) = [];
-CC2_1P(it).Y(ikill) = [];
-% keeping only one particle for testing the code
-xmin = 267;
-xmax = 273;
-ymin = 670;
-ymax = 680;
-%removing 
-clear i2rmv_xmin i2rmv_xmax i2rmv_ymin i2rmv_ymax i2rmv
-i2rmv_xmin = CC2_1P(it).X < xmin;
-i2rmv_xmax = CC2_1P(it).X > xmax;
-i2rmv_ymin = CC2_1P(it).Y < ymin;
-i2rmv_ymax = CC2_1P(it).Y > ymax;
-i2rmv = or(or(i2rmv_xmin,i2rmv_xmax),or(i2rmv_ymin,i2rmv_ymax));
-CC2_1P(it).X(i2rmv) = [];
-CC2_1P(it).Y(i2rmv) = [];
-
-CC1_1P_timecat.X = [CC1_1P_timecat.X,CC1_1P(it).X]; CC1_1P_timecat.Y = [CC1_1P_timecat.Y,CC1_1P(it).Y];
-CC2_1P_timecat.X = [CC2_1P_timecat.X,CC2_1P(it).X]; CC2_1P_timecat.Y = [CC2_1P_timecat.Y,CC2_1P(it).Y];
-
+    CC2_1P(it).X(ikill) = [];
+    CC2_1P(it).Y(ikill) = [];
+    % keeping only one particle for testing the code
+    xmin = 267;
+    xmax = 273;
+    ymin = 670;
+    ymax = 680;
+    %removing
+    clear i2rmv_xmin i2rmv_xmax i2rmv_ymin i2rmv_ymax i2rmv
+    i2rmv_xmin = CC2_1P(it).X < xmin;
+    i2rmv_xmax = CC2_1P(it).X > xmax;
+    i2rmv_ymin = CC2_1P(it).Y < ymin;
+    i2rmv_ymax = CC2_1P(it).Y > ymax;
+    i2rmv = or(or(i2rmv_xmin,i2rmv_xmax),or(i2rmv_ymin,i2rmv_ymax));
+    CC2_1P(it).X(i2rmv) = [];
+    CC2_1P(it).Y(i2rmv) = [];
+    
+    CC1_1P_timecat.X = [CC1_1P_timecat.X,CC1_1P(it).X]; CC1_1P_timecat.Y = [CC1_1P_timecat.Y,CC1_1P(it).Y];
+    CC2_1P_timecat.X = [CC2_1P_timecat.X,CC2_1P(it).X]; CC2_1P_timecat.Y = [CC2_1P_timecat.Y,CC2_1P(it).Y];
+    
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1074,9 +1121,9 @@ for icam = 1:2
     calib = load(CalibFile);
     calib = calib.calib;
     calib = calib(:,icam);
-%     for ical = 1 : size(calib,1)
-%         calib(ical).dirPlane = [2,3,1];
-%     end
+    %     for ical = 1 : size(calib,1)
+    %         calib(ical).dirPlane = [2,3,1];
+    %     end
     pos(1:length(CC(it).X),1) = [CC(it).X]';
     pos(1:length(CC(it).Y),2) = [CC(it).Y]';
     for ip = 1 : size(pos(:,1))
@@ -1214,19 +1261,19 @@ it   = 1;
 
 iCam = 1;
 for ip = 1 : length(datacam(iCam).data(it).P(:,1))
-X = datacam(iCam).data(it).P(ip,1)*[1-10*datacam(iCam).data(it).V(ip,1),1+10*datacam(iCam).data(it).V(ip,1)];
-Y = datacam(iCam).data(it).P(ip,2)*[1-10*datacam(iCam).data(it).V(ip,2),1+10*datacam(iCam).data(it).V(ip,2)];
-Z = datacam(iCam).data(it).P(ip,3)*[1-10*datacam(iCam).data(it).V(ip,3),1+10*datacam(iCam).data(it).V(ip,3)];
-plot3(X(1),Y(1),Z(1),'ob')
-plot3(X,Y,Z,'-b')
+    X = datacam(iCam).data(it).P(ip,1)*[1-10*datacam(iCam).data(it).V(ip,1),1+10*datacam(iCam).data(it).V(ip,1)];
+    Y = datacam(iCam).data(it).P(ip,2)*[1-10*datacam(iCam).data(it).V(ip,2),1+10*datacam(iCam).data(it).V(ip,2)];
+    Z = datacam(iCam).data(it).P(ip,3)*[1-10*datacam(iCam).data(it).V(ip,3),1+10*datacam(iCam).data(it).V(ip,3)];
+    plot3(X(1),Y(1),Z(1),'ob')
+    plot3(X,Y,Z,'-b')
 end
 iCam = 2;
 for ip = 1 : length(datacam(iCam).data(it).P(:,1))
-X = datacam(iCam).data(it).P(ip,1)*[1,1+10*datacam(iCam).data(it).V(ip,1)];
-Y = datacam(iCam).data(it).P(ip,2)*[1,1+10*datacam(iCam).data(it).V(ip,2)];
-Z = datacam(iCam).data(it).P(ip,3)*[1,1+10*datacam(iCam).data(it).V(ip,3)];
-plot3(X(1),Y(1),Z(1),'or')
-plot3(X,Y,Z,'-r')
+    X = datacam(iCam).data(it).P(ip,1)*[1,1+10*datacam(iCam).data(it).V(ip,1)];
+    Y = datacam(iCam).data(it).P(ip,2)*[1,1+10*datacam(iCam).data(it).V(ip,2)];
+    Z = datacam(iCam).data(it).P(ip,3)*[1,1+10*datacam(iCam).data(it).V(ip,3)];
+    plot3(X(1),Y(1),Z(1),'or')
+    plot3(X,Y,Z,'-r')
 end
 view(3)
 %% step 7 - sur le PSMN - soon on Matlab
@@ -1241,7 +1288,7 @@ info = h5info(filename);
 %% step 8 - Tracking
 
 session.input_path = strcat('D:\pono\IFPEN\IFPEN_manips\expe_2021_03_11\for4DPTV\',...
-                      're01_10spatules\');
+    're01_10spatules\');
 session.output_path = session.input_path;
 trackName = strcat(nameExpe,'_rays_out');
 [tracks,traj]=track3d(session, nameExpe, 'rays_out_cpp',10,0.2,2,1,2,1);
@@ -1321,11 +1368,98 @@ box on
 xlabel('x')
 ylabel('y')
 zlabel('z')
-%% FUNCTIONS 
+%% FUNCTIONS
+
+%%
+% weighted centroid or gaussian approximation
+
+ifile = 35;
+
+fprintf('load image sequence \n')
+inputFolder = allExpeStrct(iexpe).inputFolder;
+cd(inputFolder)
+
+cd(inputFolder)
+listMcin2 = dir('*.mcin2');
+filename  = listMcin2(ifile).name;
+fprintf('name %s \n',listMcin2(ifile).name)
+
+cd(inputFolder)
+[~,~,params] = mCINREAD2(filename,1,1);
+totalnFrames = params.total_nframes;
+
+cd(inputFolder)
+[M,~,params]=mCINREAD2(filename,1,totalnFrames);
+fprintf('load image sequence - DONE \n')
+
+% calculate mean image
+ImMean = uint8(mean(M,3));
+% subtract
+Im01 = M - ImMean;
+%fprintf('line 1339 \n')
 
 %%
 
+th = allExpeStrct(iexpe).centerFinding_th;
+sz = allExpeStrct(iexpe).centerFinding_sz;
+Nwidth = 1;
+for it = 1 % : size(M,3)
+    fprintf('doing time %0.4d / %0.4d \n',it,size(M,3))
+    CC(it).xyRAW = pkfnd(Im01(:,:,it),th,sz);
+    
+    tic
+    for ixy = 1 : length(CC(it).xyRAW)
+        % refine at subpixel precision
+        Im = zeros(size(Im01,1),size(Im01,2),class(Im01));
+        Im(:,:) = Im01(:,:,it);
+        
+        clear xpkfnd ypkfnd Ip
+        Ip = zeros(2*Nwidth+1,2*Nwidth+1,'double');
+        xpkfnd = CC(it).xyRAW(ixy,1);
+        ypkfnd = CC(it).xyRAW(ixy,2);
+        Ip = double(Im(ypkfnd-Nwidth:ypkfnd+Nwidth,xpkfnd-Nwidth:xpkfnd+Nwidth));
+        CC(it).xy(ixy,1) = xpkfnd + 0.5*log(Ip(2,3)/Ip(2,1))/(log((Ip(2,2)*Ip(2,2))/(Ip(2,1)*Ip(2,3))));
+        CC(it).xy(ixy,2) = ypkfnd + 0.5*log(Ip(3,2)/Ip(1,2))/(log((Ip(2,2)*Ip(2,2))/(Ip(1,2)*Ip(3,2))));
+        
+    end
+    toc
+    
+    tic
+    
+    Im = zeros(size(Im01,1),size(Im01,2),class(Im01));
+    Im(:,:) = Im01(:,:,it);
+    stats = regionprops(Im>0,Im,'centroid','Area','weightedcentroid');
+    ikill = find([stats.Area]<9);
+    stats(ikill) = [];
+    toc
+    
+end
 
+figure
+imagesc(Im), colormap gray
+hold on
+for  ixy = 1 : length(CC(it).xyRAW)
+    plot(CC(it).xy(ixy,1),CC(it).xy(ixy,2),'or')
+end
+for istats = 1 : length(stats)
+    xwc = stats(istats).WeightedCentroid(1);
+    ywc = stats(istats).WeightedCentroid(2);
+    plot(xwc,ywc,'+g')
+end
+caxis([0 10]);
+
+figure
+imagesc(M(:,:,it)), colormap gray
+hold on
+for  ixy = 1 : length(CC(it).xyRAW)
+    plot(CC(it).xy(ixy,1),CC(it).xy(ixy,2),'or')
+end
+for istats = 1 : length(stats)
+    xwc = stats(istats).WeightedCentroid(1);
+    ywc = stats(istats).WeightedCentroid(2);
+    plot(xwc,ywc,'+g')
+end
+caxis([0 10]);
 %%
 
 
@@ -1379,20 +1513,35 @@ sz = allExpeStrct(iexpe).centerFinding_sz;
 Nwidth = 1;
 for it = 1 : size(M,3)
     fprintf('doing time %0.4d / %0.4d \n',it,size(M,3))
+    Im = zeros(size(Im01,1),size(Im01,2),class(Im01));
+    Im(:,:) = Im01(:,:,it);
+    
+    %%%%%
+    %%%%% with region props
+    %%%%%
+    %     stats = regionprops(Im>0,Im,'centroid','Area','weightedcentroid');
+    %     ikill = find([stats.Area]<9);
+    %     stats(ikill) = [];
+    %
+    %     for istats = 1 : length(stats)
+    %         CC(it).xy(istats,1) = stats(istats).WeightedCentroid(1);
+    %         CC(it).xy(istats,2) = stats(istats).WeightedCentroid(2);
+    %     end
+    
+    %%%%%
+    %%%%% with pkfnd
+    %%%%%
     CC(it).xyRAW = pkfnd(Im01(:,:,it),th,sz);
     for ixy = 1 : length(CC(it).xyRAW)
-        % refine at subpixel precision
-        Im = zeros(size(Im01,1),size(Im01,2),class(Im01));
-        Im(:,:) = Im01(:,:,it);
-
-        %         clear xpkfnd ypkfnd Ip
-%         Ip = zeros(2*Nwidth+1,2*Nwidth+1,'double');
-%         xpkfnd = CC(it).xyRAW(ixy,1);
-%         ypkfnd = CC(it).xyRAW(ixy,2);
-%         Ip = double(Im(ypkfnd-Nwidth:ypkfnd+Nwidth,xpkfnd-Nwidth:xpkfnd+Nwidth));
-%         CC(it).xy(ixy,1) = xpkfnd + 0.5*log(Ip(2,3)/Ip(2,1))/(log((Ip(2,2)*Ip(2,2))/(Ip(2,1)*Ip(2,3))));
-%         CC(it).xy(ixy,2) = ypkfnd + 0.5*log(Ip(3,2)/Ip(1,2))/(log((Ip(2,2)*Ip(2,2))/(Ip(1,2)*Ip(3,2))));
-
+        %refine at subpixel precision
+        clear xpkfnd ypkfnd Ip
+        Ip = zeros(2*Nwidth+1,2*Nwidth+1,'double');
+        xpkfnd = CC(it).xyRAW(ixy,1);
+        ypkfnd = CC(it).xyRAW(ixy,2);
+        Ip = double(Im(ypkfnd-Nwidth:ypkfnd+Nwidth,xpkfnd-Nwidth:xpkfnd+Nwidth));
+        CC(it).xy(ixy,1) = xpkfnd + 0.5*log(Ip(2,3)/Ip(2,1))/(log((Ip(2,2)*Ip(2,2))/(Ip(2,1)*Ip(2,3))));
+        CC(it).xy(ixy,2) = ypkfnd + 0.5*log(Ip(3,2)/Ip(1,2))/(log((Ip(2,2)*Ip(2,2))/(Ip(1,2)*Ip(3,2))));
+        
     end
 end
 %%%%%%%%%%%%%%%%%%
@@ -1467,7 +1616,7 @@ switch dofigures
         imagesc(Im01(:,:,1))
         hold on
         plot(CC(1).xy(:,1),CC(1).xy(:,2),'ob')
-
+        
         tmin = 0001;
         tmax = size(M,3);
         colP = parula(tmax-tmin+1);
@@ -1517,7 +1666,7 @@ D = 'nan';
 % y_pxC1 = 899;
 % x_pxC2 = 994;
 % y_pxC2 = 899;
-% 
+%
 % % plane 01
 % % x_pxC1 = 502;
 % % y_pxC1 = 878;
@@ -1530,33 +1679,33 @@ D = 'nan';
 
 
 if size(P1,1) == 0
-    crossP = []; 
+    crossP = [];
 elseif size(P2,1) == 0
-    crossP = []; 
+    crossP = [];
 else
     
-if size(P1,1) == 3
-    P1 = P1';
-end
-if size(P2,1) == 3
-    P2 = P2';
-end
-
-if isempty(P1)
-    %break
-elseif isempty(P2)
-    %break
-end
-
-
-clear lineA0 lineA1 lineB0 lineB1
-lineA0 = P1;
-lineA1 = (P1+V1);
-lineB0 = P2;
-lineB1 = (P2+V2);
-[D,Xcp,Ycp,Zcp,Xcq,Ycq,Zcq,Dmin,imin,jmin]= ll_dist3d(lineA0,lineA1,lineB0,lineB1);
-crossP = ([Xcp,Ycp,Zcp]+[Xcq,Ycq,Zcq])/2; % crossing oping
-
+    if size(P1,1) == 3
+        P1 = P1';
+    end
+    if size(P2,1) == 3
+        P2 = P2';
+    end
+    
+    if isempty(P1)
+        %break
+    elseif isempty(P2)
+        %break
+    end
+    
+    
+    clear lineA0 lineA1 lineB0 lineB1
+    lineA0 = P1;
+    lineA1 = (P1+V1);
+    lineB0 = P2;
+    lineB1 = (P2+V2);
+    [D,Xcp,Ycp,Zcp,Xcq,Ycq,Zcq,Dmin,imin,jmin]= ll_dist3d(lineA0,lineA1,lineB0,lineB1);
+    crossP = ([Xcp,Ycp,Zcp]+[Xcq,Ycq,Zcq])/2; % crossing oping
+    
 end
 
 end
@@ -1583,19 +1732,19 @@ for kplan = 1:Nplans
         elseif Ttype=='T3'
             [Xtmp,Ytmp]=transformPointsInverse((calib(kplan).T3px2rw),x_px(I==1),y_px(I==1));
         end
-
+        
         XYZ(kplan,1,I==1)=Xtmp;
         XYZ(kplan,2,I==1)=Ytmp;
         XYZ(kplan,3,I==1)=calib(kplan).posPlane;
     end
-
+    
     XYZ(kplan,1,I==0) = NaN;
     XYZ(kplan,2,I==0) = NaN;
     XYZ(kplan,3,I==0) = NaN;
 end
-    [P, V] = fit3Dline(XYZ);
-    
-    
+[P, V] = fit3Dline(XYZ);
+
+
 end
 
 %% fit3Dline
@@ -1603,7 +1752,7 @@ function [xyz0,direction] = fit3Dline(XYZ)
 
 if max(max(max(isnan(XYZ)))) ==0
     [xyz0,direction] = fit3Dline_nonan(XYZ);
-else    
+else
     [P V] = arrayfun(@(I)(fit3Dline_nan(XYZ(:,:,I))),1:size(XYZ,3),'UniformOutput',false);
     xyz0 = (cell2mat(P'));
     direction = (cell2mat(V'));
@@ -1617,11 +1766,11 @@ end
 %% TAN_fit3Dline
 function [P,V]=TAN_fit3Dline(XYZ)
 %%-------------------------------------------------------------------------
-%%computes the line of best fit (in the least square sense) for points in 
-%%Three Dimensional Space using the 3D Orthogonal Distance Regression 
+%%computes the line of best fit (in the least square sense) for points in
+%%Three Dimensional Space using the 3D Orthogonal Distance Regression
 %%(ODR) line method.
-%%The line is parametrized by l = P + V*t, P(xo,yo,zo) is given by the mean 
-%%of all the points and V(u,v,w) by the eigenvector associated with the 
+%%The line is parametrized by l = P + V*t, P(xo,yo,zo) is given by the mean
+%%of all the points and V(u,v,w) by the eigenvector associated with the
 %%largest singular value of the matrix M = [xi - xo , yi - yo , zi - zo]
 %%XYZ is a 3D-matrix containing the set of points [xi yi zi] in the 2 first
 %%dimensions, the third dimension correspond to each particle.
@@ -1639,7 +1788,7 @@ P = squeeze(xyz0)';
 M = XYZ - xyz0; %centering the data
 
 [~, ~, Vec]=arrayfun(@(ii) svd(M(:,:,ii)),[1:size(M,3)],'UniformOutput',false);
-Vac = cat(3,Vec{:}); 
+Vac = cat(3,Vec{:});
 V = squeeze(Vac(:,1,:))'; %in matlab the singular values are listed in decreasing order.
 
 %dd=arrayfun(@(x) cross(Vac(:,end,x),Vac(:,end-1,x)),[1:size(Vac,3)],'UniformOutput',false);
@@ -1657,27 +1806,27 @@ I = find(isnan(XYZ(:,1)));
 XYZ(I,:)=[];
 
 if size(XYZ,1)>2
-
-xyz0=mean(XYZ);
-%xyz0=cell2mat(arrayfun(@(x) mean(x.CCrw),Proj,'UniformOutput',false)); 
-
-A=bsxfun(@minus,XYZ,xyz0); %center the data
-
-% xyz0=XYZ(3,:);
-% A= XYZ;
-
-% xyz0=XYZ(plan_centre,:);
-% A=bsxfun(@minus,XYZ,xyz0); %center the data
-
-%[U,S,V]=svd(A);
-[Uac Sac Vac]=arrayfun(@(kkk) svd(A(:,:,kkk)),[1:size(A,3)],'UniformOutput',false);
-Ua=cat(3,Uac{:}); 
-Sa=cat(3,Sac{:});
-Va=cat(3,Vac{:}); clear Uac Sac Vac;
-
-%direction=cross(V(:,end),V(:,end-1));
-dd=arrayfun(@(x) cross(Va(:,end,x),Va(:,end-1,x)),[1:size(Va,3)],'UniformOutput',false);
-direction=cat(3,dd{:})';  clear dd;
+    
+    xyz0=mean(XYZ);
+    %xyz0=cell2mat(arrayfun(@(x) mean(x.CCrw),Proj,'UniformOutput',false));
+    
+    A=bsxfun(@minus,XYZ,xyz0); %center the data
+    
+    % xyz0=XYZ(3,:);
+    % A= XYZ;
+    
+    % xyz0=XYZ(plan_centre,:);
+    % A=bsxfun(@minus,XYZ,xyz0); %center the data
+    
+    %[U,S,V]=svd(A);
+    [Uac Sac Vac]=arrayfun(@(kkk) svd(A(:,:,kkk)),[1:size(A,3)],'UniformOutput',false);
+    Ua=cat(3,Uac{:});
+    Sa=cat(3,Sac{:});
+    Va=cat(3,Vac{:}); clear Uac Sac Vac;
+    
+    %direction=cross(V(:,end),V(:,end-1));
+    dd=arrayfun(@(x) cross(Va(:,end,x),Va(:,end-1,x)),[1:size(Va,3)],'UniformOutput',false);
+    direction=cat(3,dd{:})';  clear dd;
 else
     %xyz0 = [NaN NaN NaN];
     %direction = [NaN NaN NaN];
@@ -1700,7 +1849,7 @@ xyz0=squeeze(xyz0)';
 %Aa=permute(A,[3 2 1]);
 
 [~, ~, Vac]=arrayfun(@(kkk) svd(Aa(:,:,kkk)),[1:size(Aa,3)],'UniformOutput',false);
-Va=cat(3,Vac{:}); 
+Va=cat(3,Vac{:});
 
 dd=arrayfun(@(x) cross(Va(:,end,x),Va(:,end-1,x)),[1:size(Va,3)],'UniformOutput',false);
 direction=cat(2,dd{:})'; clear dd Vac A;
@@ -1747,8 +1896,8 @@ function [D,Xcp,Ycp,Zcp,Xcq,Ycq,Zcq,Dmin,imin,jmin]= ll_dist3d(P0,P1,Q0,Q1)
 % Zcq - array of % coordinates of closest points belonging to the second
 % (Q) set (m X n). See Xcq definition.
 %
-% Remarks: 
-% Below is a simple unit test for this function. The test creates 
+% Remarks:
+% Below is a simple unit test for this function. The test creates
 % 2 sets of random 3D lines, finds the distances between each pair of
 % lines, and plots the pair with shortest distance
 % To run the test, uncommnent the following lines:
@@ -1759,7 +1908,7 @@ function [D,Xcp,Ycp,Zcp,Xcq,Ycq,Zcq,Dmin,imin,jmin]= ll_dist3d(P0,P1,Q0,Q1)
 % [D,Xcp,Ycp,Zcp,Xcq,Ycq,Zcq,Dmin,imin,jmin] = ll_dist3d(P0, P1, Q0, Q1);
 % t = (-2:0.01:2);
 % Tp = repmat(t(:), 1, size(P0,1));
-% Tq = repmat(t(:), 1, size(Q0,1)); 
+% Tq = repmat(t(:), 1, size(Q0,1));
 % Xp = repmat(P0(:,1)',[size(t,2), 1]) + Tp.*(repmat(P1(:,1)',[size(t,2),1])-...
 % repmat(P0(:,1)', size(t,2), 1));
 % Yp = repmat(P0(:,2)',[size(t,2), 1]) + Tp.*(repmat(P1(:,2)',[size(t,2),1])-...
@@ -1771,7 +1920,7 @@ function [D,Xcp,Ycp,Zcp,Xcq,Ycq,Zcq,Dmin,imin,jmin]= ll_dist3d(P0,P1,Q0,Q1)
 % Yq = repmat(Q0(:,2)',size(t,2), 1) + Tq.*(repmat(Q1(:,2)',size(t,2),1)-...
 % repmat(Q0(:,2)', size(t,2), 1));
 % Zq = repmat(Q0(:,3)',size(t,2), 1) + Tq.*(repmat(Q1(:,3)',size(t,2),1)-...
-% repmat(Q0(:,3)', size(t,2), 1)); 
+% repmat(Q0(:,3)', size(t,2), 1));
 % figure;
 % plot3(Xp(:,imin),Yp(:,imin),Zp(:,imin),Xq(:,jmin),Yq(:,jmin),Zq(:,jmin));
 % hold on
@@ -1786,19 +1935,19 @@ function [D,Xcp,Ycp,Zcp,Xcq,Ycq,Zcq,Dmin,imin,jmin]= ll_dist3d(P0,P1,Q0,Q1)
 % check inputs validity
 [mp0, np0] = size(P0);
 if(np0 ~=3 )
-   error('Array P0 should of size (m X 3)');
+    error('Array P0 should of size (m X 3)');
 end
 [mpl, npl] = size(P1);
 if((mpl ~= mp0) || (npl ~= np0))
-   error('P0 and Pl arrays must be of same size');
+    error('P0 and Pl arrays must be of same size');
 end
 [mq0, nq0] = size(Q0);
 if(nq0 ~= 3)
-   error('Array Q0 should of size (n X 3)');
+    error('Array Q0 should of size (n X 3)');
 end
 [mq1, nq1] = size(Q1);
 if((mq1 ~= mq0) || (nq1 ~= nq0))
-   error('Q0 and Ql arrays must be of same size');
+    error('Q0 and Ql arrays must be of same size');
 end
 u = P1 - P0; % vectors from P0 to P1
 uu = repmat(u,[1,1,mq0]);
@@ -1818,9 +1967,9 @@ idx_nonpar = ~idx_par; % indices of non-parallel lines
 sc = NaN(mp0,1,mq0);
 tc = NaN(mp0,1,mq0);
 sc(idx_nonpar) = (bb(idx_nonpar).*ee(idx_nonpar) - ...
-                  cc(idx_nonpar).*dd(idx_nonpar))./ff(idx_nonpar);
+    cc(idx_nonpar).*dd(idx_nonpar))./ff(idx_nonpar);
 tc(idx_nonpar) = (aa(idx_nonpar).*ee(idx_nonpar) - ...
-                  bb(idx_nonpar).*dd(idx_nonpar))./ff(idx_nonpar);
+    bb(idx_nonpar).*dd(idx_nonpar))./ff(idx_nonpar);
 PPc = PP0 + repmat(sc, [1,3,1]).*uu;
 QQc = QQ0 + repmat(tc, [1,3,1]).*vv;
 Xcp = permute(PPc(:,1,:), [1 3 2]);
@@ -1831,14 +1980,14 @@ Ycq = permute(QQc(:,2,:), [1 3 2]);
 Zcq = permute(QQc(:,3,:), [1 3 2]);
 % If there are parallel lines, find the distances  between them
 % Note, that for parallel lines, the closest points will be undefined
-% (will contain NaN's) 
+% (will contain NaN's)
 if(any(idx_par))
-   idx_par3 = repmat(idx_par, [1,3,1]); % logical indices
-   PPc(idx_par3) = PP0(idx_par3);
-   tmpl = repmat(dd(idx_par)./bb(idx_par), [1, 3, 1]);
-   tmp2 = vv(find(idx_par3));
-   
-   QQc(idx_par3) = QQ0(idx_par3) + tmpl(:).*tmp2;
+    idx_par3 = repmat(idx_par, [1,3,1]); % logical indices
+    PPc(idx_par3) = PP0(idx_par3);
+    tmpl = repmat(dd(idx_par)./bb(idx_par), [1, 3, 1]);
+    tmp2 = vv(find(idx_par3));
+    
+    QQc(idx_par3) = QQ0(idx_par3) + tmpl(:).*tmp2;
 end
 PQc = (PPc - QQc);
 D = permute(sqrt(dot(PQc,PQc,2)), [1 3 2]);
@@ -1867,11 +2016,11 @@ if ( length(varargin) > 1 )
     x = 1:size(C,2);
     y = 1:size(C,1);
     [xx,yy] = meshgrid(x,y);
-%     figure
-%     imagesc(C)
+    %     figure
+    %     imagesc(C)
     C(((xx-x0).^2+(yy-y0).^2) > R^2)=0;
-%     figure
-%     imagesc(C)
+    %     figure
+    %     imagesc(C)
 end
 
 %
