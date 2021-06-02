@@ -362,8 +362,6 @@ trajArray_CAM2(ikill02)=[];
 
 c4f = clock; fprintf('done tracking particles at %0.2dh%0.2dm in %0.0f s \n',c4f(4),c4f(5), etime(c4f,c4i))
 
-%%%%% %%%%% %%%%% %%%%% %%%%%
-%%%%% %%%%% %%%%% %%%%% %%%%%
 % STEP 5 - associate trajectories
 c5i = clock; fprintf('starts associating trajectories at %0.2dh%0.2dm\n',c5i(4),c5i(5))
 
@@ -380,7 +378,9 @@ for itrajCam0 = 1 : length(trajArray_CAM1)
 end
 
 c5f = clock; fprintf('trajectories associated at %0.2dh%0.2dm in %0.0f s \n',c5f(4),c5f(5), etime(c5f,c5i))
-
+%%%%% %%%%% %%%%% %%%%% %%%%%
+%%%%% %%%%% %%%%% %%%%% %%%%%
+%%%%% %%%%% %%%%% %%%%% %%%%%
 %%%%% %%%%% %%%%% %%%%% %%%%%
 %%%%% %%%%% %%%%% %%%%% %%%%%
 % STEP 6 - Crossing the rays
@@ -433,10 +433,9 @@ c5f = clock; fprintf('trajectories associated at %0.2dh%0.2dm in %0.0f s \n',c5f
 % %axis equal
 % c = clock; fprintf('rays crossed at %0.2dh%0.2dm\n',c(4),c(5))
 
-%%%%% %%%%% %%%%% %%%%% %%%%%
-%%%%% %%%%% %%%%% %%%%% %%%%%
+
 % cross rays with trajectories found with DARCY02_matchingTracks
-ci = clock; fprintf('start crossing rays at %0.2dh%0.2dm\n',c(4),c(5))
+ci = clock; fprintf('start at %0.2dh%0.2dm\n',c(4),c(5))
 
 someTrajectories = struct();
 Ttype = 'T3';
@@ -493,7 +492,7 @@ for iselTraj = 1 : size(listMatchedTracks,2)
     
 end
 
-ce = clock; fprintf('done crossing rays at %0.2dh%0.2dm in %0.0f s \n',c(4),c(5), etime(ce,ci))
+ce = clock; fprintf('done at %0.2dh%0.2dm in %0.0f s \n',c(4),c(5), etime(ce,ci))
 
 %%%%%%%%%
 hist3D = [];
