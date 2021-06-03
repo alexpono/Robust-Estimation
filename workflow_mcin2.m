@@ -649,14 +649,128 @@ for ivb = 1 : length(voxBeads)
     if    voxBeads(ivb).Bead == 0
         [k1] = convhull(x,y,z,'Simplify',true);
         trisurf(k1,x,y,z,...
-            'FaceColor',[min(10*voxBeads(ivb).nParticles,255),min(10*voxBeads(ivb).nParticles,255),5]/255,...
+            'FaceColor',[min(10*voxBeads(ivb).nParticles,255),20,5]/255,...
             'edgeColor','none')
         pause(.1)
     end
 end
 
+%% speed in voxels
 
-%%
+% build data including all planes
+voxData = struct();
+allTrajAllPlanes = struct(); iatap = 0;
+for iplane = 7 : 21
+    someTrajectories = allresults(iplane).someTrajectories;
+    for itraj3D = 1 : size(someTrajectories,2)
+        iatap =  iatap + 1;
+        allTrajAllPlanes(iatap).itraj1 = someTrajectories(itraj3D).itraj1;
+        allTrajAllPlanes(iatap).itraj2 = someTrajectories(itraj3D).itraj2;
+        allTrajAllPlanes(iatap).x3D = someTrajectories(itraj3D).x3D;
+        allTrajAllPlanes(iatap).y3D = someTrajectories(itraj3D).y3D;
+        allTrajAllPlanes(iatap).z3D = someTrajectories(itraj3D).z3D;
+        allTrajAllPlanes(iatap).D = someTrajectories(itraj3D).D;
+        allTrajAllPlanes(iatap).iplane = iplane;
+    end
+end
+
+wVox = 1
+listX = -15 : wVox : 15;
+listY = -20 : wVox : 10;
+listZ =   0 : wVox : 20;
+
+for ix = 1:length(listX)-1
+    for iy = 1:length(listY)-1
+        for iz =  1:length(listZ)-1
+            voxData(ix,iy,iz).x = (listX(ix) + listX(ix+1))/2;
+            voxData(ix,iy,iz).y = (listY(iy) + listY(iy+1))/2;
+            voxData(ix,iy,iz).z = (listZ(iz) + listZ(iz+1))/2;
+            voxData(ix,iy,iz).v = [];
+            voxData(ix,iy,iz).vx = [];
+            voxData(ix,iy,iz).vy = [];
+            voxData(ix,iy,iz).vz = [];
+        end
+    end
+end
+% à détailler pour rigueur géométrique
+vStep = 10;
+
+tic
+for itraj3D = 1 : 1 : size(allTrajAllPlanes,2)
+    clear x3D y3D z3D
+    x3D = [allTrajAllPlanes(itraj3D).x3D];
+    y3D = [allTrajAllPlanes(itraj3D).y3D];
+    z3D = [allTrajAllPlanes(itraj3D).z3D];
+    for is = 1 : vStep : length(x3D)-vStep
+        % find if it goes to a voxel: 
+        % is x3D, y3D and z3D in listX listY and listZ and where?
+        [mix,ix] = mink(abs(listX-(x3D(is)+x3D(is+vStep))/2),2);
+        [miy,iy] = mink(abs(listY-(y3D(is)+y3D(is+vStep))/2),2);
+        [miz,iz] = mink(abs(listZ-(z3D(is)+z3D(is+vStep))/2),2);
+        if mix(1)<1 && miy(1)<1 && miz(1)<1
+           % calculate speed and store it in voxData
+           clear v vx vy vz
+           vx = x3D(is+vStep)-x3D(is);
+           vy = y3D(is+vStep)-y3D(is);
+           vz = z3D(is+vStep)-z3D(is);
+           v = norm( [ vx vy vz ] );
+           IX = max(1,min(ix(1),length(listX)-1));
+           IY = max(1,min(iy(1),length(listY)-1));
+           IZ = max(1,min(iz(1),length(listZ)-1));
+           voxData(IX,IY,IZ).v  = [voxData(IX,IY,IZ).v ,v];   
+           voxData(IX,IY,IZ).vx = [voxData(IX,IY,IZ).vx,vx];   
+           voxData(IX,IY,IZ).vy = [voxData(IX,IY,IZ).vy,vy];   
+           voxData(IX,IY,IZ).vz = [voxData(IX,IY,IZ).vz,vz];   
+        end
+    end
+end
+
+for ix = 1:length(listX)-1
+    for iy = 1:length(listY)-1
+        for iz =  1:length(listZ)-1
+            
+            voxData(ix,iy,iz).U = mean([voxData(ix,iy,iz).vx]);
+            voxData(ix,iy,iz).V = mean([voxData(ix,iy,iz).vy]);
+            voxData(ix,iy,iz).W = mean([voxData(ix,iy,iz).vz]);
+        end
+    end
+end
+
+
+
+clear U V W X Y Z
+for ix = 1:length(listX)-1
+    for iy = 1:length(listY)-1
+        for iz = 1:length(listZ)-1
+            if ~isnan(voxData(ix,iy,iz).U)
+            X(ix,iy,iz) = voxData(ix,iy,iz).x;
+            Y(ix,iy,iz) = voxData(ix,iy,iz).y;
+            Z(ix,iy,iz) = voxData(ix,iy,iz).z;
+            U(ix,iy,iz) = max(-.2,min(.2,voxData(ix,iy,iz).U));
+            V(ix,iy,iz) = max(-.2,min(.2,voxData(ix,iy,iz).V));
+            W(ix,iy,iz) = max(-.2,min(.2,voxData(ix,iy,iz).W));
+            end
+        end
+    end
+end
+figure('defaultAxesFontSize',20), box on, hold on
+quiver3(X,Y,Z,U,V,W)
+xlabel('x')
+ylabel('y')
+zlabel('z')
+
+figure
+histogram(U(:))
+title('x direction')
+
+figure
+histogram(V(:))
+title('vertical direction (y)')
+
+figure
+histogram(W(:))
+title('z direction')
+%% exploration voxel
 d = [-1 1];
 [x,y,z] = meshgrid(d,d,d);  % A cube
 x = [x(:);0];
@@ -665,7 +779,7 @@ z = [z(:);0];
 % [x,y,z] are corners of a cube plus the center.
 X = [x(:) y(:) z(:)];
 Tes = delaunayn(X)
-%%
+%% exploration voxel
 n = 10; % Number of vertices
 theta = 2*pi*rand(n,1)-pi; % Random theta
 phi = pi*rand(n,1) - pi/2; % Random phi
@@ -692,6 +806,11 @@ for iii = 1 : length(IsInside)
         plot3(xyz(1,iii),xyz(2,iii),xyz(3,iii),'or')
     end
 end
+
+
+
+%%
+
 %% step 9 - Stitching
 
 dfmax = 4; % maximum number of tolerated missing frames to reconnect to trajectories
