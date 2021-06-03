@@ -563,10 +563,135 @@ zlabel('z')
 axis equal
 
 %% IV. Faire de belles images
+% voxels of 1mm^3, check if they contain particules or not
+
+clear allTracersXYZ allTracersX allTracersY allTracersZ
+allTracersX = [];
+allTracersY = [];
+allTracersZ = [];
+for iplane = 7 : 21
+    clear someTrajectories
+    someTrajectories = allresults(iplane).someTrajectories;
+    for itraj3D = 1 : size(someTrajectories,2)
+        allTracersX = [allTracersX , someTrajectories(itraj3D).x3D];
+        allTracersY = [allTracersY , someTrajectories(itraj3D).y3D];
+        allTracersZ = [allTracersZ , someTrajectories(itraj3D).z3D];
+    end
+end
+allTracersXYZ = [allTracersX;allTracersY;allTracersZ];
 
 
+%%
+voxBeads = struct();
+ivb = 0; % index voxel beads
+wVox = 1; % edge length of voxels
+listX = -15:15;
+listY = -20:wVox:10;
+listZ = 0:wVox:20;
+for ix = 1:length(listX)-1
+    for iy = 1:length(listY)-1
+        for iz =  1:length(listZ)-1
+            ivb = ivb + 1;
+            % compute number of particles in the voxel
+            clear x y z
+            xA = listX(ix); xB = listX(ix+1);
+            x = [xA,xA,xB,xB,xA,xA,xB,xB,(xA+xB)/2]';
+            yA = listY(iy); yB = listY(iy+1);
+            y = [yA,yB,yA,yB,yA,yB,yA,yB,(yA+yB)/2]';
+            zA = listZ(iz); zB = listZ(iz+1);
+            z = [zA,zA,zA,zA,zB,zB,zB,zB,(zA+zB)/2]';
+            voxBeads(ivb).x = x;
+            voxBeads(ivb).y = y;
+            voxBeads(ivb).z = z;
+            tri = delaunayn([x y z]); % Generate delaunay triangulization
+            tn = tsearchn([x y z], tri, allTracersXYZ'); % Determine which triangle point is within
+            IsInside = ~isnan(tn);
+            fprintf('ivb : %0.0f, n° inside: %0.0f \n',ivb,sum(IsInside))
+            
+            voxBeads(ivb).nParticles = sum(IsInside);
+            if sum(IsInside) < 10
+                
+                voxBeads(ivb).Bead = 1;
+            else
+                
+                voxBeads(ivb).Bead = 0;
+            end
+        end
+    end
+end
+%%
+%%
+colrP = jet(21);
+figure('defaultAxesFontSize',20), box on, hold on
+for iplane = 7 : 21
+    someTrajectories = allresults(iplane).someTrajectories;
+    for itraj3D = 1 : size(someTrajectories,2)
+        plot3([someTrajectories(itraj3D).x3D],...
+            [someTrajectories(itraj3D).y3D],...
+            [someTrajectories(itraj3D).z3D],'.b','markerFaceColor',colrP(iplane,:))
+    end
+end
+view(3)
+xlabel('x')
+ylabel('y')
+zlabel('z')
+axis equal
+
+pause(1)
+%figure('defaultAxesFontSize',20), box on, hold on
+%view(3)
+%axis equal
+
+for ivb = 1 : length(voxBeads)
+    x = voxBeads(ivb).x;
+    y = voxBeads(ivb).y;
+    z = voxBeads(ivb).z;
+    if    voxBeads(ivb).Bead == 0
+        [k1] = convhull(x,y,z,'Simplify',true);
+        trisurf(k1,x,y,z,...
+            'FaceColor',[min(10*voxBeads(ivb).nParticles,255),min(10*voxBeads(ivb).nParticles,255),5]/255,...
+            'edgeColor','none')
+        pause(.1)
+    end
+end
 
 
+%%
+d = [-1 1];
+[x,y,z] = meshgrid(d,d,d);  % A cube
+x = [x(:);0];
+y = [y(:);0];
+z = [z(:);0];
+% [x,y,z] are corners of a cube plus the center.
+X = [x(:) y(:) z(:)];
+Tes = delaunayn(X)
+%%
+n = 10; % Number of vertices
+theta = 2*pi*rand(n,1)-pi; % Random theta
+phi = pi*rand(n,1) - pi/2; % Random phi
+x = cos(phi).*cos(theta); % Create x values
+y = cos(phi).*sin(theta); % Create y values
+z = sin(phi); % Create z values
+figure
+plot3(x,y,z)
+
+[k1,av1] = convhull(x,y,z,'Simplify',true);
+hold on
+h = trisurf(k1,x,y,z,'FaceColor','cyan')
+h.FaceAlpha = .3
+axis equal
+
+xyz = 2*rand(3, n)-1; % Generate random points
+tri = delaunayn([x y z]); % Generate delaunay triangulization
+tn = tsearchn([x y z], tri, xyz'); % Determine which triangle point is within
+IsInside = ~isnan(tn); % Convert to logical vector
+for iii = 1 : length(IsInside)
+    if IsInside(iii) == 1
+        plot3(xyz(1,iii),xyz(2,iii),xyz(3,iii),'ob')
+    else
+        plot3(xyz(1,iii),xyz(2,iii),xyz(3,iii),'or')
+    end
+end
 %% step 9 - Stitching
 
 dfmax = 4; % maximum number of tolerated missing frames to reconnect to trajectories
