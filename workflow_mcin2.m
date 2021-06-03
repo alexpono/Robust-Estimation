@@ -370,6 +370,9 @@ c5i = clock; fprintf('starts associating trajectories at %0.2dh%0.2dm\n',c5i(4),
 listMatchedTracks = struct(); % list of potential tracks
 ilist = 0;
 for itrajCam0 = 1 : length(trajArray_CAM1)
+    if (~mod(itrajCam0,100) == 1) || (itrajCam0==1)
+        fprintf('index trajectory: %0.0f / %0.0f \n',itrajCam0,length(trajArray_CAM1))
+    end
     %fprintf('itrajCam0 : %0.0f \n',itrajCam0)
     [itrajCam1,dtraj,listPotTracks,prelist] = DARCY02_matchingTracks(itrajCam0,trajArray_CAM1,trajArray_CAM2RAW,tform1);
     if itrajCam1
@@ -533,41 +536,45 @@ allresults(iplane).filenamePlane = filenamePlane;
 
 end
 
+%% figure for a whole experiment
+figure('defaultAxesFontSize',20), box on, hold on
+edges = [0:0.1:30];
+for iplane = 7 : 21
+    clear hist3D N
+    hist3D = allresults(iplane).hist3D;
+    [N] = histcounts(hist3D,edges);
+    plot(edges(1:end-1),N,'-','lineWidth',4)
+end
 
+% plot the result
+figure('defaultAxesFontSize',20), box on, hold on
+for iplane = 7 : 21
+    someTrajectories = allresults(iplane).someTrajectories;
+    for itraj3D = 1 : size(someTrajectories,2)
+        plot3([someTrajectories(itraj3D).x3D],...
+            [someTrajectories(itraj3D).y3D],...
+            [someTrajectories(itraj3D).z3D],'.b')
+    end
+end
+view(3)
+xlabel('x')
+ylabel('y')
+zlabel('z')
+axis equal
 
-%% STEP 7 - plotting the result in 3D
-% h3D = figure('defaultAxesFontSize',20); box on, hold on
-% view(3)
-% histx3D = [];
-% histy3D = [];
-% histz3D = [];
-% for iP = 1 : length(structPotentialPairs)
-%     if ~isempty(structPotentialPairs(iP).x3D)
-%         clear x3D y3D z3D
-%         x3D = structPotentialPairs(iP).x3D;
-%         y3D = structPotentialPairs(iP).y3D;
-%         z3D = structPotentialPairs(iP).z3D;
-%         if min(z3D) < 10
-%             continue
-%         end
-%         plot3(x3D,y3D,z3D,'-ob')
-%         
-%         histx3D = [histx3D,x3D];
-%         histy3D = [histy3D,y3D];
-%         histz3D = [histz3D,z3D];
-%     end
-% end
-% xlabel('x')
-% ylabel('y')
-% zlabel('z')
-% % axis([-300 300 -20 130 17 24])
-% 
-% 
+%% IV. Faire de belles images
 
 
 
 
-%%
+%% step 9 - Stitching
+
+dfmax = 4; % maximum number of tolerated missing frames to reconnect to trajectories
+dxmax = 2*0.031; % (mm) % maximum tolerated distance between stitchs parts
+dvmax = 0.3;
+lmin  = 2*0.031;
+StitchedTraj = Stitching(session,nameExpe,trackName,dfmax,dxmax,dvmax,lmin);
+
 
 
 %%
@@ -578,196 +585,6 @@ end
 
 %% OLD STUFF
 
-%% STEP 5 - try to associate trajectories: prematch
-ci = clock; fprintf('start at %0.2dh%0.2dm\n',c(4),c(5))
-
-% figure('defaultAxesFontSize',20), hold on, box on
-structPotentialPairs = struct(); % structure listing potential pairs of trajectories
-ipairs = 0;
-
-
-clear listPotTraj
-% listPotTraj = struct(); % prematch, list of potential trajectories
-
-% idea to speed up: ne tester que les trajectoires qui sont prochent, avec
-% une distance minimale dmin = 50 pix par exemple.
-% prematch time is 0.2 sec
-for itrj01 =  1 : length(trajArray_CAM1)
-    clear xtCAM01 ytCAM01
-    xtCAM01 = trajArray_CAM1(itrj01).track(:,1);
-    ytCAM01 = trajArray_CAM1(itrj01).track(:,2);
-    
-    trajArray_CAM1(itrj01).L   = sqrt( (max(xtCAM01)-min(xtCAM01))^2 + (max(ytCAM01)-min(ytCAM01))^2);
-    trajArray_CAM1(itrj01).x0 = mean(xtCAM01);
-    trajArray_CAM1(itrj01).y0 = mean(ytCAM01);
-end
-
-for itrj02 =  1 :  length(trajArray_CAM2)
-    clear xtCAM02 ytCAM02
-    xtCAM02 = trajArray_CAM2(itrj02).track(:,1);
-    ytCAM02 = trajArray_CAM2(itrj02).track(:,2);
-    
-    trajArray_CAM2(itrj02).L  = sqrt( (max(xtCAM02)-min(xtCAM02))^2 + (max(ytCAM02)-min(ytCAM02))^2);
-    trajArray_CAM2(itrj02).x0 = mean(xtCAM02);
-    trajArray_CAM2(itrj02).y0 = mean(ytCAM02);
-    
-end
-
-clear Lcam01 Lcam02 Lcam01rm Lcam02rm LLcam0102
-Lcam01 = [trajArray_CAM1.L]';
-Lcam02 = [trajArray_CAM2.L];
-Lcam01rm = repmat(Lcam01,1,length(trajArray_CAM2));
-Lcam02rm = repmat(Lcam02,length(trajArray_CAM1),1);
-LLcam0102 = Lcam01rm + Lcam02rm;
-
-listPotTraj = - LLcam0102 + pdist2([[trajArray_CAM1.x0]',[trajArray_CAM1.y0]'],[[trajArray_CAM2.x0]',[trajArray_CAM2.y0]']);
-
-% coupler avec la liste des temps possibles
-
-
-%%%%% %%%%% %%%%% %%%%% %%%%%
-%%%%% %%%%% %%%%% %%%%% %%%%%
-%%%%% %%%%% %%%%% %%%%% %%%%%
-%%%%% %%%%% %%%%% %%%%% %%%%%
-%%%%% %%%%% %%%%% %%%%% %%%%%
-ipairs = 0;
-clear structPotentialPairs
-% figure('defaultAxesFontSize',20), box on, hold on
-for itrj01 = 1 : length(trajArray_CAM1)
-    % fprintf('progress: %0.4d / %0.4d \n',itrj01,length(trajArray_CAM1))
-    
-    clear xtCAM01 ytCAM01
-    
-    xtCAM01 = trajArray_CAM1(itrj01).track(:,1);
-    ytCAM01 = trajArray_CAM1(itrj01).track(:,2);
-    
-    tminCAM01 = min(trajArray_CAM1(itrj01).track(:,3));
-    tmaxCAM01 = max(trajArray_CAM1(itrj01).track(:,3));
-    
-    for itrj = 1 : length(trajArray_CAM2)
-        
-        if listPotTraj(itrj01,itrj) < 0
-            tminCAM02 = min(trajArray_CAM2(itrj).track(:,3));
-            tmaxCAM02 = max(trajArray_CAM2(itrj).track(:,3));
-            [A,B,C] = intersect([tminCAM01:tmaxCAM01],[tminCAM02:tmaxCAM02]);
-            if A
-                % camera 2
-                clear xt yt
-                xt = trajArray_CAM2(itrj).track(:,1);
-                yt = trajArray_CAM2(itrj).track(:,2);
-                
-                %plot(xtCAM01,ytCAM01,'-b','lineWidth',2)
-                %plot(xt,yt,'-r','lineWidth',2)
-                ipairs = ipairs + 1;
-                structPotentialPairs(ipairs).trajCAM01 = itrj01;
-                structPotentialPairs(ipairs).trajCAM02 = itrj;
-                structPotentialPairs(ipairs).txA = A;
-                structPotentialPairs(ipairs).tCAM01 = B;
-                structPotentialPairs(ipairs).tCAM02 = C;
-            end
-        end
-    end
-    %axis([min(xtCAM01) max(xtCAM01) min(ytCAM01) max(ytCAM01)])
-end
-
-% using structPotentialPairs, decide who matches or not
-%%%%%%%%%%
-for iP = 1 : length(structPotentialPairs)
-    itrj01 = structPotentialPairs(iP).trajCAM01;
-    itrj02 = structPotentialPairs(iP).trajCAM02;
-    
-    clear x01 y01 x02 y02 db
-    x01 = trajArray_CAM1(itrj01).track(:,1);
-    y01 = trajArray_CAM1(itrj01).track(:,2);
-    x02 = trajArray_CAM2(itrj02).track(:,1);
-    y02 = trajArray_CAM2(itrj02).track(:,2);
-    
-    for it = 1 : length([structPotentialPairs(iP).tCAM01])
-        it1 = structPotentialPairs(iP).tCAM01(it);
-        it2 = structPotentialPairs(iP).tCAM02(it);
-        db(it) = ((x01(it1)-x02(it2))^2 + (y01(it1)-y02(it2))^2)^(1/2);
-    end
-    
-    it1tt = [structPotentialPairs(iP).tCAM01];
-    it2tt = [structPotentialPairs(iP).tCAM02];
-    
-    Dx01 = x01(it1tt(end))-x01(it1tt(1));
-    Dx02 = x02(it2tt(end))-x02(it2tt(1));
-    Dy01 = y01(it1tt(end))-y01(it1tt(1));
-    Dy02 = y02(it2tt(end))-y02(it2tt(1));
-    
-    structPotentialPairs(iP).Dx01 = Dx01;
-    structPotentialPairs(iP).Dx02 = Dx02;
-    structPotentialPairs(iP).Dy01 = Dy01;
-    structPotentialPairs(iP).Dy02 = Dy02;
-    structPotentialPairs(iP).d = mean(db);
-end
-
-
-%%%%% %%%%% %%%%% %%%%% %%%%%
-%%%%% %%%%% %%%%% %%%%% %%%%%
-%%%%% %%%%% %%%%% %%%%% %%%%%
-%%%%% %%%%% %%%%% %%%%% %%%%%
-%%%%% %%%%% %%%%% %%%%% %%%%%
-% good and bad pairing
-
-%figure('defaultAxesFontSize',20), box on, hold on
-% for itrj01 = 1 : length(trajArray_CAM1)
-%     clear xtCAM01 ytCAM01
-%     xtCAM01 = trajArray_CAM1(itrj01).track(:,1);
-%     ytCAM01 = trajArray_CAM1(itrj01).track(:,2);
-%     plot(xtCAM01,ytCAM01,'-','Color', [1 0 0 .25],'lineWidth',1)
-% end
-% for itrj02 = 1 : length(trajArray_CAM2)
-%     clear xtCAM02 ytCAM02
-%     xtCAM02 = trajArray_CAM2(itrj02).track(:,1);
-%     ytCAM02 = trajArray_CAM2(itrj02).track(:,2);
-%     plot(xtCAM02,ytCAM02,'-','Color', [0 0 1 .25],'lineWidth',2)
-% end
-% show pairs one by one
-for iP = 1 : length(structPotentialPairs) % [69,102,108,114,120]
-    
-    itrj01 = structPotentialPairs(iP).trajCAM01;
-    itrj02 = structPotentialPairs(iP).trajCAM02;
-    
-    clear x01 y01 x02 y02
-    x01 = trajArray_CAM1(itrj01).track(:,1);
-    y01 = trajArray_CAM1(itrj01).track(:,2);
-    x02 = trajArray_CAM2(itrj02).track(:,1);
-    y02 = trajArray_CAM2(itrj02).track(:,2);
-    
-    it1tt = [structPotentialPairs(iP).tCAM01];
-    it2tt = [structPotentialPairs(iP).tCAM02];
-    
-    Dx01 = structPotentialPairs(iP).Dx01;
-    Dx02 = structPotentialPairs(iP).Dx02;
-    Dy01 = structPotentialPairs(iP).Dy01;
-    Dy02 = structPotentialPairs(iP).Dy02;
-    ddd  = structPotentialPairs(iP).d;
-    
-    if ddd < 20 && (abs(Dx01-Dx02)<5) && (abs(Dy01-Dy02)<5)
-        %plot(x01,y01,'-b','lineWidth',2)
-        %plot(x02,y02,'-r','lineWidth',2)
-        structPotentialPairs(iP).matched = 1;
-        %     for it = 1 : length([structPotentialPairs(iP).tCAM01])
-        %         it1 = structPotentialPairs(iP).tCAM01(it);
-        %         it2 = structPotentialPairs(iP).tCAM02(it);
-        %         plot([x01(it1),x02(it2)],[y01(it1),y02(it2)],'-g')
-        %     end
-    else
-        
-        structPotentialPairs(iP).matched = 0;
-    end
-    %title(sprintf('iP: %0.0f, d: %0.0f, Dx01: %0.0f, Dx02: %0.0f, Dy01: %0.0f, Dy02: %0.0f ',...
-    %    iP,structPotentialPairs(iP).d,Dx01, Dx02, Dy01, Dy02))
-end
-toc
-%ax = gca;
-%ax.XLim = [480  725];
-%ax.YLim = [185  510];
-%set(gcf,'position',[680   117   990   861])
-ce = clock; fprintf('done at %0.2dh%0.2dm in %0.0f s \n',c(4),c(5), etime(ce,ci))
-%set(gca,'ydir','reverse')
 
 
 %%
@@ -849,151 +666,6 @@ plot(xC1,yC1,'-r','lineWidth',4)
 
 
 %% 000 - DEBUGGING ZONE: Exploration matching tracks
-
-minTintersect = 10; % necessary overlapping time
-distThresh = 50;
-dstimestep = 5;
-colorPlots = jet(size(CC1,2)+1);
-
-%someTrajectories = struct();
-%nTraj_gi = length(someTrajectories) + 1;
-%nTraj_gi = 1;
-% 1 . choose two trajectories
-hcam0 = figure; hold on, box on
-for ic = 1 : length(trajArray_CAM1)
-    if length(trajArray_CAM1(ic).track) > 40
-        clear xC1 yC1
-        xC1 = [trajArray_CAM1(ic).track(:,1)];
-        yC1 = [trajArray_CAM1(ic).track(:,2)];
-        plot(xC1,yC1,'-ob',...
-            'markerEdgeColor','none',...
-            'markerFaceColor',colorPlots(min(trajArray_CAM1(ic).track(:,3)),:))
-    end
-end
-set(gca,'ydir','reverse')
-set(gcf,'position',[26   160   915   809])
-title('cam01')
-
-hcam1 = figure; hold on, box on
-for ic = 1 : length(trajArray_CAM2RAW)
-    if length(trajArray_CAM2RAW(ic).track) > 40
-        clear xC2 yC2
-        xC2 = [trajArray_CAM2RAW(ic).track(:,1)];
-        yC2 = [trajArray_CAM2RAW(ic).track(:,2)];
-        plot(xC2,yC2,'-ob',...
-            'markerEdgeColor','none',...
-            'markerFaceColor',colorPlots(min(trajArray_CAM2RAW(ic).track(:,3)),:))
-    end
-end
-set(gca,'ydir','reverse')
-set(gcf,'position',[950   160   915   809])
-title('cam02')
-
-figure(hcam0)
-[xz,yz] = ginput(1);
-xlim([xz-100 xz+100])
-ylim([yz-100 yz+100])
-[xcam0,ycam0] = ginput(1);
-hold on
-plot(xcam0,ycam0,'sb')
-[xcam1,ycam1] = transformPointsInverse(tform1,xcam0,ycam0);
-figure(hcam1)
-hold on
-plot(xcam1,ycam1,'sr')
-
-% find the trajectory in camera 01
-clear dgi
-dgi = nan(length(trajArray_CAM1),1);
-for ic = 1 : length(trajArray_CAM1)
-    clear xC1 yC1 dd
-    xC1 = [trajArray_CAM1(ic).track(:,1)];
-    yC1 = [trajArray_CAM1(ic).track(:,2)];
-    dd = sqrt((xC1-xcam0).^2 + (yC1-ycam0).^2);
-    dgi(ic) = min(dd);
-end
-[~,itraj1] = min(dgi);
-figure(hcam0)
-xlim([min(trajArray_CAM1(itraj1).track(:,1))-20 max(trajArray_CAM1(itraj1).track(:,1))+20])
-ylim([min(trajArray_CAM1(itraj1).track(:,2))-20 max(trajArray_CAM1(itraj1).track(:,2))+20])
-plot(trajArray_CAM1(itraj1).track(:,1),trajArray_CAM1(itraj1).track(:,2),'-','lineWidth',3)
-
-% filter tracks in camera 1 with same time
-hintersect = figure; box on, hold on
-tminCAM01 = min(trajArray_CAM1(itraj1).track(:,3));
-tmaxCAM01 = max(trajArray_CAM1(itraj1).track(:,3));
-fprintf('tminCam01: %0.0f, tmaxCam01: %0.0f \n',tminCAM01,tmaxCAM01)
-% build the list of potential matching trajectory
-% criteria for matching:
-% 1/ having points at the same time
-% 2/ being in the same region
-dgi2cam1 = nan(1,length(trajArray_CAM2RAW));
-listPotTracks = struct(); % list of potential tracks
-ipt = 0; % i possible tracks
-for ic = 1 : length(trajArray_CAM2RAW)
-    tminCAM02 = min(trajArray_CAM2RAW(ic).track(:,3));
-    tmaxCAM02 = max(trajArray_CAM2RAW(ic).track(:,3));
-    clear A B C
-    [A,tcam01,tcam02] = intersect([tminCAM01:tmaxCAM01],[tminCAM02:tmaxCAM02]);
-    if length(A) > minTintersect % 1/ having points at the same time
-        % 2/ being in the same region
-        clear xC2 yC2 dd
-        xC2 = [trajArray_CAM2RAW(ic).track(:,1)];
-        yC2 = [trajArray_CAM2RAW(ic).track(:,2)];
-        dd = sqrt((xC2-xcam1).^2 + (yC2-ycam1).^2);
-        dgi2cam1(ic) = min(dd);
-        if min(dd) < distThresh
-            ipt = ipt + 1;
-            fprintf('ic : %0.4f, tminCam02: %0.0f, tmaxCam02: %0.0f \n',ic,tminCAM02,tmaxCAM02)
-            fprintf('length(A) : %0.0f, length(tcam01) : %0.0f, length(tcam02) : %0.0f  \n',...
-                length(A),length(tcam01),length(tcam02))
-            plot(trajArray_CAM2RAW(ic).track(:,1),trajArray_CAM2RAW(ic).track(:,2),'o-')
-            listPotTracks(ipt).itr = ic;
-            
-            listPotTracks(ipt).Dxcam0Global = trajArray_CAM1(itraj1).track(end,1) - trajArray_CAM1(itraj1).track(1,1);
-            listPotTracks(ipt).Dycam0Global = trajArray_CAM1(itraj1).track(end,2) - trajArray_CAM1(itraj1).track(1,2);
-            
-            listPotTracks(ipt).Dxcam0 = trajArray_CAM1(itraj1).track(max(tcam01),1) - trajArray_CAM1(itraj1).track(min(tcam01),1);
-            listPotTracks(ipt).Dycam0 = trajArray_CAM1(itraj1).track(max(tcam01),2) - trajArray_CAM1(itraj1).track(min(tcam01),2);
-            listPotTracks(ipt).Dxcam1 = trajArray_CAM2RAW(ic).track(max(tcam02),1) - trajArray_CAM2RAW(ic).track(min(tcam02),1);
-            listPotTracks(ipt).Dycam1 = trajArray_CAM2RAW(ic).track(max(tcam02),2) - trajArray_CAM2RAW(ic).track(min(tcam02),2);
-        
-         listPotTracks(ipt).Crit = abs(listPotTracks(ipt).Dxcam0Global-listPotTracks(ipt).Dxcam1) + ...
-             abs(listPotTracks(ipt).Dycam0Global-listPotTracks(ipt).Dycam1);
-         
-         clear dsCam0 dsCam1
-         dsCam0 = 0; dsCam1 = 0;
-         for ids = 1 : dstimestep : length(A)-dstimestep
-             xc0i = trajArray_CAM1(itraj1).track(tcam01(ids),1);
-             yc0i = trajArray_CAM1(itraj1).track(tcam01(ids),2);
-             xc0f = trajArray_CAM1(itraj1).track(tcam01(ids+dstimestep),1);
-             yc0f = trajArray_CAM1(itraj1).track(tcam01(ids+dstimestep),2);
-             xc1i = trajArray_CAM2RAW(ic).track(tcam02(ids),1);
-             yc1i = trajArray_CAM2RAW(ic).track(tcam02(ids),2);
-             xc1f = trajArray_CAM2RAW(ic).track(tcam02(ids+dstimestep),1);
-             yc1f = trajArray_CAM2RAW(ic).track(tcam02(ids+dstimestep),2);
-             dsCam0 = dsCam0 + sqrt((xc0i-xc0f)^2+(yc0i-yc0f)^2);
-             dsCam1 = dsCam1 + sqrt((xc1i-xc1f)^2+(yc1i-yc1f)^2);
-         end
-         listPotTracks(ipt).dsCam0 = dsCam0;
-         listPotTracks(ipt).dsCam1 = dsCam1;
-         
-         listPotTracks(ipt).dsRatio = dsCam0 / dsCam1;
-         listPotTracks(ipt).distance = min(dd);
-        end
-    end
-end
-set(gca,'ydir','reverse')
-plot(xcam1,ycam1,'sr')
-
-figure(hcam0)
-figure(hcam1)
-[~,iitraj2] = min([listPotTracks.Crit]);
-itraj2 = listPotTracks(iitraj2).itr;
-clear xC2 yC2
-xC2 = [trajArray_CAM2RAW(itraj2).track(:,1)];
-yC2 = [trajArray_CAM2RAW(itraj2).track(:,2)];
-plot(xC2,yC2,'r-','lineWidth',3)
-
 
 
 %% cross rays with trajectory selected one by one by hand
@@ -1118,444 +790,6 @@ xlabel('x')
 ylabel('y')
 zlabel('z')
 axis equal
-%%
-hhist = figure; box on
-hold on
-histogram(hist3D_3536,[6:0.1:12])
-histogram(hist3D_3738,[6:0.1:12])
-histogram(hist3D_3940,[6:0.1:12])
-legend('P17','P18','P19')
-%%
-figure, box on, hold on
-someTrajectories = struct();
-iiii = -1;
-for ixy = 1 : length(zProjPoints)/2
-         iiii = iiii+2;    
-            x_pxC1 = zProjPoints(iiii,1);
-            y_pxC1 = zProjPoints(iiii,2);
-            plot(x_pxC1,y_pxC1,'ob')
-            x_pxC2 = zProjPoints(iiii+1,1);
-            y_pxC2 = zProjPoints(iiii+1,2);
-            
-            [crossP,D] = crossRaysonFire(CalibFileCam2,CalibFileCam1,x_pxC1,y_pxC1,x_pxC2,y_pxC2,Ttype);
-            if length(crossP)>0
-                someTrajectories(ixy).x3D(1) = crossP(1);
-                someTrajectories(ixy).y3D(1) = crossP(2);
-                someTrajectories(ixy).z3D(1) = crossP(3);
-                someTrajectories(ixy).D(1) = D;
-            end
-        end
-% plot the result
-figure, hold on
-for itraj3D = 1 : length(zProjPoints)/2
-    itraj3D
-    plot3([someTrajectories(itraj3D).x3D],...
-        [someTrajectories(itraj3D).y3D],...
-        [someTrajectories(itraj3D).z3D],'og')
-end
-view(3)
-xlabel('x')
-ylabel('y')
-zlabel('z')
-
-%%
-% for ic = 1 : length(trajArray_CAM2)
-%     if trajArray_CAM2(ic).L > 20
-%         clear xC1 yC1
-%         xC1 = [trajArray_CAM2(ic).track(:,1)];
-%         yC1 = [trajArray_CAM2(ic).track(:,2)];
-%         plot(xC1,yC1,'-or')
-%     end
-% end
-
-% ginput to select a trajectory couple
-[xZ,yZ] = ginput(1);
-xlim([xZ-60 xZ+60])
-ylim([yZ-60 yZ+60])
-[xgi,ygi] = ginput(1);
-% find the trajectory in camera 01
-clear dgi
-dgi = nan(length(trajArray_CAM1),1);
-for ic = 1 : length(trajArray_CAM1)
-    if trajArray_CAM1(ic).L > 15
-        clear xC1 yC1 dd
-        xC1 = [trajArray_CAM1(ic).track(:,1)];
-        yC1 = [trajArray_CAM1(ic).track(:,2)];
-        dd = sqrt((xC1-xgi).^2 + (yC1-ygi).^2);
-        dgi(ic) = min(dd);
-    end
-end
-[~,itraj1] = min(dgi);
-clear xC1 yC1
-xC1 = [trajArray_CAM1(itraj1).track(:,1)];
-yC1 = [trajArray_CAM1(itraj1).track(:,2)];
-plot(xC1,yC1,'-og')
-
-
-
-% find the trajectory in camera 02
-% plot only trajectories with intersecting times:
-tminCAM01 = min(trajArray_CAM1(itraj1).track(:,3));
-tmaxCAM01 = max(trajArray_CAM1(itraj1).track(:,3));
-clear dgi2 listic
-listic = [];
-for ic = 1 : length(trajArray_CAM2)
-    
-tminCAM02 = min(trajArray_CAM2(ic).track(:,3));
-tmaxCAM02 = max(trajArray_CAM2(ic).track(:,3));
-[A] = intersect([tminCAM01:tmaxCAM01],[tminCAM02:tmaxCAM02]);
-if A
-    listic = [listic,ic];
-        clear xC2 yC2
-        xC2 = [trajArray_CAM2(ic).track(:,1)];
-        yC2 = [trajArray_CAM2(ic).track(:,2)];
-        plot(xC2,yC2,'-or')
-    end
-end
-[xgi,ygi] = ginput(1);
-
-dgi2 = nan(length(trajArray_CAM2),1);
-for iic = 1 : length(listic)
-    ic = listic(iic);
-        clear xC2 yC2 dd
-        xC2 = [trajArray_CAM2(ic).track(:,1)];
-        yC2 = [trajArray_CAM2(ic).track(:,2)];
-        dd = sqrt((xC2-xgi).^2 + (yC2-ygi).^2);
-        dgi2(iic) = min(dd);
-end
-[~,iitraj2] = min(dgi2);
-
-itraj2 = listic(iitraj2);
-clear xC1 yC1
-xC1 = [trajArray_CAM2(itraj2).track(:,1)];
-yC1 = [trajArray_CAM2(itraj2).track(:,2)];
-plot(xC1,yC1,'-oy')
-%pause(2)
-%close all
-
-someTrajectories(nTraj_gi).itraj1 = itraj1;
-someTrajectories(nTraj_gi).itraj2 = itraj2;
-
-% cross the two choosen rays
-clear x01 y01 x02 y02 x02incam01 y02incam01
-tminCAM01 = min(trajArray_CAM1(itraj1).track(:,3));
-tmaxCAM01 = max(trajArray_CAM1(itraj1).track(:,3));
-tminCAM02 = min(trajArray_CAM2(itraj2).track(:,3));
-tmaxCAM02 = max(trajArray_CAM2(itraj2).track(:,3));
-[A,B,C] = intersect([tminCAM01:tmaxCAM01],[tminCAM02:tmaxCAM02]);
-%
-figure
-hold on
-clear x01 y01 x02incam01 y02incam01 x02 y02
-x01 = trajArray_CAM1(itraj1).track(min(B):max(B),1);
-y01 = trajArray_CAM1(itraj1).track(min(B):max(B),2);
-x02incam01 = trajArray_CAM2(itraj2).track(min(C):max(C),1);
-y02incam01 = trajArray_CAM2(itraj2).track(min(C):max(C),2);
-[ x02, y02] = transformPointsInverse(tform1,x02incam01,y02incam01);
-
-clear x_pxC1 y_pxC1 x_pxC2 y_pxC2
-for ixy = 1 : length(x01)
-    
-    x_pxC1 = x01(ixy);
-    y_pxC1 = y01(ixy);
-    x_pxC2 = x02(ixy);
-    y_pxC2 = y02(ixy);
-    
-    [crossP,D] = crossRaysonFire(CalibFileCam1,CalibFileCam2,x_pxC1,y_pxC1,x_pxC2,y_pxC2,Ttype);
-    if length(crossP)>0
-        someTrajectories(nTraj_gi).x3D(ixy) = crossP(1);
-        someTrajectories(nTraj_gi).y3D(ixy) = crossP(2);
-        someTrajectories(nTraj_gi).z3D(ixy) = crossP(3);
-        someTrajectories(nTraj_gi).D(ixy) = D;
-    end
-end
-
-figure, hold on
-for itraj3D = 1 : length(someTrajectories)
-    plot3([someTrajectories(itraj3D).x3D],...
-        [someTrajectories(itraj3D).y3D],...
-        [someTrajectories(itraj3D).z3D],'-og')
-end
-view(3)
-xlabel('x')
-ylabel('y')
-zlabel('z')
-%% 000 - DEBUGGING ZONE:
-figure
-histogram(histx3D)
-title('x')
-figure
-histogram(histy3D)
-title('y')
-figure
-histogram(histz3D)
-title('z')
-%% 000 - DEBUGGING ZONE: show two trajectories
-figure, hold on
-for iP = 1 : length(structPotentialPairs)
-    if structPotentialPairs(iP).d > 15
-        fprintf('progress: %0.0f / %0.0f \n',iP,length(structPotentialPairs) )
-        if structPotentialPairs(iP).matched == 1
-            itrj01 = structPotentialPairs(iP).trajCAM01;
-            itrj02 = structPotentialPairs(iP).trajCAM02;
-            
-            clear x01 y01 x02 y02
-            x01 = trajArray_CAM1(itrj01).track(structPotentialPairs(iP).tCAM01,1);
-            y01 = trajArray_CAM1(itrj01).track(structPotentialPairs(iP).tCAM01,2);
-            x02incam01 = trajArray_CAM2(itrj02).track(structPotentialPairs(iP).tCAM02,1);
-            y02incam01 = trajArray_CAM2(itrj02).track(structPotentialPairs(iP).tCAM02,2);
-            [ x02, y02] = transformPointsInverse(tform1,x02incam01,y02incam01);
-            
-            plot(x01,y01,'o-b')
-            plot(x02incam01,y02incam01,'o-r')
-        end
-    end
-end
-
-
-
-
-
-
-
-
-
-%% 000 - DEBUGGING ZONE: DEBUGGING THE Ray Crossing
-iexpe = 3;
-CalibFile = allExpeStrct(iexpe).CalibFile;
-calibTemp = load(CalibFile,'calib'); calib = calibTemp.calib;
-CalibFileCam1 = calib(:,1);
-CalibFileCam2 = calib(:,2);
-%% 000 - DEBUGGING ZONE: ginput on the calibration mire
-x_pxC1 = 440;
-y_pxC1 = 546;
-x_pxC2 = 528;
-y_pxC2 = 533;
-
-cd('D:\IFPEN\IFPEN_manips\expe_2021_05_06_calibration\reorderCalPlanes4test')
-%cd('D:\IFPEN\IFPEN_manips\expe_2021_05_20_calibration_air\forCalib')
-listNames = dir('*.tif');
-ip =7;
-clear ip1 ip2
-for ic = 1 : 2
-    clear A T BW hBW stats
-    A = imread(listNames(ip+ic-1).name);
-    [hIm,wIm] = size(A);
-    T = adaptthresh(imgaussfilt(A,1),0.3);
-    BW = imbinarize(imgaussfilt(A,2),T);
-    hBW = figure; hold on
-    imshow(A), hold on
-    title(listNames(ip+ic-1).name)
-    set(gcf,'position',[400 48 900 900])
-    stats = regionprops(BW,'Centroid','Area','boundingbox','perimeter','convexHull');
-    clear iKill Xst Yst
-    iKill = find([stats.Area] < 500);
-    stats(iKill) = [];
-    clear iKill
-    iKill = [];
-    for is = 1 : length(stats)
-        Xc = stats(is).Centroid(1,1);
-        Yc = stats(is).Centroid(1,2);
-        if (Xc < 50) || (Xc > (wIm-50)) || (Yc < 50) || (Yc > (hIm-50))
-            iKill = [iKill,is];
-        end
-    end
-    stats(iKill) = [];
-    
-    for is = 1 : length(stats)
-        Xst(is) = stats(is).Centroid(1,1);
-        Yst(is) = stats(is).Centroid(1,2);
-        plot(stats(is).Centroid(1,1),stats(is).Centroid(1,2),'+r')
-    end
-    % ginput for choosing one point
-    [xgi,ygi] = ginput(1);
-    for is = 1 : length(stats)
-        Xst(is) = stats(is).Centroid(1,1);
-        Yst(is) = stats(is).Centroid(1,2);
-    end
-    clear a b d
-    d = sqrt((xgi-Xst).^2+(ygi-Yst).^2);
-    [a,b] = min(d);
-    if ic == 1
-        ip1 = b;
-        hold on
-        plot(Xst(ip1),Yst(ip1),'ob')
-        x_pxC1 = Xst(ip1);
-        y_pxC1 = Yst(ip1);
-    else
-        ip2 = b;
-        hold on
-        plot(Xst(ip2),Yst(ip2),'ob')
-        x_pxC2 = Xst(ip2);
-        y_pxC2 = Yst(ip2);
-    end
-end
-
-Ttype  = 'T3'; % T1 T3
-%[P,V,XYZ]=findRaysDarcy02(CalibFileCam1,x_pxC1,y_pxC1,Ttype);
-%[P,V,XYZ]=findRaysDarcy02(CalibFileCam2,x_pxC2,y_pxC2,Ttype);
-% close all
-crossP = crossRaysonFire(CalibFileCam1,CalibFileCam2,x_pxC1,y_pxC1,x_pxC2,y_pxC2,Ttype);
-%fprintf(,crossP(1,1),crossP(1,2),crossP(1,3))
-fprintf('x_pxC1: %3.3f, y_pxC1: %3.3f x_pxC2: %3.3f y_pxC2: %3.3f \ncrossP: x: %3.3f , y: %3.3f , z: %3.3f \n',...
-    x_pxC1, y_pxC1, x_pxC2, y_pxC2, crossP(1),crossP(2),crossP(3))
-%% 000 - DEBUGGING ZONE:
-for il = 1 : size(xyCam1Cam2,1)
-    x_pxC1 = xyCam1Cam2(il,1);
-    y_pxC1 = xyCam1Cam2(il,2);
-    x_pxC2 = xyCam1Cam2(il,3);
-    y_pxC2 = xyCam1Cam2(il,4);
-    crossP = crossRaysonFire(CalibFileCam1,CalibFileCam2,x_pxC1,y_pxC1,x_pxC2,y_pxC2,Ttype);
-    %fprintf(,crossP(1,1),crossP(1,2),crossP(1,3))
-    fprintf('x_pxC1: %3.3f, y_pxC1: %3.3f x_pxC2: %3.3f y_pxC2: %3.3f \ncrossP: x: %3.3f , y: %3.3f , z: %3.3f \n',...
-        x_pxC1, y_pxC1, x_pxC2, y_pxC2, crossP(1),crossP(2),crossP(3))
-end
-
-%% Testing crossing the rays with points on the calibration plate
-triangleMire = [
-    507.8330  878.5000   % mesuré à l'arrahce à la main
-    861.5000  873.8330   % mesuré à l'arrahce à la main
-    461.8330  886.8330   % mesuré à l'arrahce à la main
-    913.0000  881.0000   % mesuré à l'arrahce à la main
-    409.8330  897.8330   % mesuré à l'arrahce à la main
-    979.1670  891.1670]; % mesuré à l'arrahce à la main
-
-point_x_7p5mm_y_12p5mm = [
-    629.0000  478.0000 % mesuré à l'arrahce à la main
-    963.5000  490.1670 % mesuré à l'arrahce à la main
-    483.0190  787.4450 % mesuréé automatiquement avec ImageJ
-    917.5090  785.7350 % mesuréé automatiquement avec ImageJ
-    333.1020  488.5220 % mesuréé automatiquement avec ImageJ
-    894.9220  502.3680 % mesuréé automatiquement avec ImageJ
-    ];
-
-ip = 3;
-x_pxC1 = triangleMire(2*(ip-1)+1,1);
-y_pxC1 = triangleMire(2*(ip-1)+1,2);
-x_pxC2 = triangleMire(2*(ip-1)+2,1);
-y_pxC2 = triangleMire(2*(ip-1)+2,2);
-
-
-ip = 2;
-x_pxC1 = point_x_7p5mm_y_12p5mm(2*(ip-1)+1,1);
-y_pxC1 = point_x_7p5mm_y_12p5mm(2*(ip-1)+1,2);
-x_pxC2 = point_x_7p5mm_y_12p5mm(2*(ip-1)+2,1);
-y_pxC2 = point_x_7p5mm_y_12p5mm(2*(ip-1)+2,2);
-
-ip = 1;
-x_pxC1 = 534;
-y_pxC1 = 549;
-x_pxC2 = 581;
-y_pxC2 = 534;
-
-ip = 1;
-x_pxC1 = 686.5;
-y_pxC1 = 478.5
-x_pxC2 = 558.7;
-y_pxC2 = 464.3
-
-crossP = crossRaysonFire(CalibFileCam1,CalibFileCam2,x_pxC1,y_pxC1,x_pxC2,y_pxC2,Ttype)
-
-
-
-
-
-
-
-%%
-figure, hold on
-for ixy = 1 : length(x01)
-    
-    x_pxC1 = x01(ixy);
-    y_pxC1 = y01(ixy);
-    x_pxC2 = x02(ixy);
-    y_pxC2 = y02(ixy);
-    
-    crossP = crossRaysonFire(CalibFileCam1,CalibFileCam2,x_pxC1,y_pxC1,x_pxC2,y_pxC2,Ttype);
-    
-    if length(crossP)>0
-        %     figure(h3D), hold on
-        plot3(crossP(1),crossP(2),crossP(3),'og')
-        structPotentialPairs(iP).x3D(ixy) = crossP(1);
-        structPotentialPairs(iP).y3D(ixy) = crossP(2);
-        structPotentialPairs(iP).z3D(ixy) = crossP(3);
-    end
-end
-view(3)
-%%
-tic
-figure
-histogram([structPotentialPairs.d])
-toc
-%% I give [x,y], it finds the closest track for both cameras
-icam = 1;
-x = 129;
-y = 555;
-clear d
-
-if icam == 1
-    for itrj = 1 : length(trajArray_CAM1)
-        clear xt yt
-        xt = trajArray_CAM1(itrj).track(:,1);
-        yt = trajArray_CAM1(itrj).track(:,2);
-        clear dptraj
-        for ip = 1 : length(xt)
-            dptraj(ip) = ( (x-xt(ip))^2 + (y-yt(ip))^2)^(1/2);
-        end
-        d(itrj) = min(dptraj);
-    end
-elseif icam == 2
-    for itrj = 1 : length(trajArray_CAM2)
-        clear xt yt
-        xt = trajArray_CAM2(itrj).track(:,1);
-        yt = trajArray_CAM2(itrj).track(:,2);
-        clear dptraj
-        for ip = 1 : length(xt)
-            dptraj(ip) = ( (x-xt(ip))^2 + (y-yt(ip))^2)^(1/2);
-        end
-        d(itrj) = min(dptraj);
-    end
-    
-end
-[~,itrjClosest] = min(d);
-itrjClosest
-%% show the trajectories
-
-figure('defaultAxesFontSize',20), hold on, box on
-
-% for it = 1 : size(CC1,2)
-%     clear xpos ypos
-%     xpos = [CC1(it).X];
-%     ypos = [CC1(it).Y];
-%     plot(xpos,ypos,'ob')
-%
-%     clear xpos ypos
-%     xpos = part_cam2(it).pos(:,1);
-%     ypos = part_cam2(it).pos(:,2);
-%     plot(xpos,ypos,'or')
-% end
-
-for itrj = 1 : length(trajArray_CAM1)
-    % camera 1
-    clear xt yt
-    xt = trajArray_CAM1(itrj).track(:,1);
-    yt = trajArray_CAM1(itrj).track(:,2);
-    plot(xt,yt,'-b','lineWidth',2)
-    
-end
-
-for itrj = 1 : length(trajArray_CAM2)
-    % camera 2
-    clear xt yt
-    xt = trajArray_CAM2(itrj).track(:,1);
-    yt = trajArray_CAM2(itrj).track(:,2);
-    plot(xt,yt,'-r','lineWidth',2)
-end
-%% testing the function
-imageCorrelation(xm,ym,ACC1,ACC2,round(wti/2),filterOrder,'cleanC',dxPass01,dyPass01,R)
-
-
-
 
 
 
@@ -1663,141 +897,9 @@ for icam = 1:2
 end
 
 toc
-%%
-min(min(XYZ(:,1,:)))
-max(max(XYZ(:,1,:)))
 
-min(min(XYZ(:,2,:)))
-max(max(XYZ(:,2,:)))
 
-min(min(XYZ(:,3,:)))
-max(max(XYZ(:,3,:)))
-%%
-figure('defaultAxesFontSize',20)
-histogram([XYZ(:,1,:)])
-xlabel('X')
-figure('defaultAxesFontSize',20)
-histogram([XYZ(:,2,:)])
-xlabel('Y')
-figure('defaultAxesFontSize',20)
-histogram([XYZ(:,3,:)])
-xlabel('Z')
-%% showing PV
-figure('defaultaxesFontSize',20)
-hold on
-box on
-lray = 4000;
-for icam = 1 : 2
-    if icam == 1
-        col = 'b';
-    elseif icam ==2
-        col = 'r';
-    end
-    clear P V
-    P = (camPV(icam,it).P);
-    V = (camPV(icam,it).V);
-    for ip = 1 : size(P,1)
-        ip
-        clear X Y Z XR YR ZR
-        X = P(ip,1);
-        Y = P(ip,2);
-        Z = P(ip,3);
-        XR = P(ip,1)+[-lray*V(ip,1),lray*V(ip,1)];
-        YR = P(ip,2)+[-lray*V(ip,2),lray*V(ip,2)];
-        ZR = P(ip,3)+[-lray*V(ip,3),lray*V(ip,3)];
-        plot3(X,Y,Z,'o','color',col)
-        plot3(XR,YR,ZR,'--b','color',col)
-    end
-end
-view(3)
-xlabel('x')
-ylabel('y')
-zlabel('z')
-axis([-1000 1000 -1000 1000 -1000 2000])
-plot3(X3D,Y3D,Z3D,'og')
-axis([-200 200 -200 200 -60 60])
-axis equal
-%% STEP 7 - BLP
-tic
 
-dmax12 = 5%0.5; % cquoiça !!!
-
-clear X3D Y3D Z3D d3D
-X3D = []; Y3D = []; Z3D = []; d3D = [];
-
-icam = 1;
-Pcam1 = camPV(icam,it).P;
-Vcam1 = camPV(icam,it).V;
-icam = 2;
-Pcam2 = camPV(icam,it).P;
-Vcam2 = camPV(icam,it).V;
-
-p = Pcam2;
-v = Vcam2;
-for ipcam1 = 1 : size(Pcam1,1)
-    p1 = Pcam1(ipcam1,:);
-    v1 = Vcam1(ipcam1,:);
-    [cent,dist] = TAN_closest_point_to_lines2(p1,v1,p,v);
-    [a,b] = min(dist);
-    if a < dmax12
-        X3D = [X3D,cent(b,1)];
-        Y3D = [Y3D,cent(b,2)];
-        Z3D = [Z3D,cent(b,3)];
-        d3D = [d3D,a];
-    end
-end
-toc
-
-figure('defaultaxesFontSize',20)
-hold on
-box on
-plot3(X3D,Y3D,Z3D,'og')
-view(3)
-xlabel('x')
-ylabel('y')
-zlabel('z')
-%%
-figure('defaultaxesFontSize',20)
-box on
-histogram(Z3D,[10:.1:60])
-
-%% STEP 6 - center to rays
-tic
-camID = [1,2];
-[P, V] = Centers2Rays(session,nameExpe,CalibFile,camID);
-toc
-
-%% step 6 - trying to show the rays
-
-cd(session.output_path)
-cd('Processed_DATA')
-cd(nameExpe)
-
-load('rays.mat')
-
-%% showing rays - to remove . . .
-figure
-hold on, box on
-
-it   = 1;
-
-iCam = 1;
-for ip = 1 : length(datacam(iCam).data(it).P(:,1))
-    X = datacam(iCam).data(it).P(ip,1)*[1-10*datacam(iCam).data(it).V(ip,1),1+10*datacam(iCam).data(it).V(ip,1)];
-    Y = datacam(iCam).data(it).P(ip,2)*[1-10*datacam(iCam).data(it).V(ip,2),1+10*datacam(iCam).data(it).V(ip,2)];
-    Z = datacam(iCam).data(it).P(ip,3)*[1-10*datacam(iCam).data(it).V(ip,3),1+10*datacam(iCam).data(it).V(ip,3)];
-    plot3(X(1),Y(1),Z(1),'ob')
-    plot3(X,Y,Z,'-b')
-end
-iCam = 2;
-for ip = 1 : length(datacam(iCam).data(it).P(:,1))
-    X = datacam(iCam).data(it).P(ip,1)*[1,1+10*datacam(iCam).data(it).V(ip,1)];
-    Y = datacam(iCam).data(it).P(ip,2)*[1,1+10*datacam(iCam).data(it).V(ip,2)];
-    Z = datacam(iCam).data(it).P(ip,3)*[1,1+10*datacam(iCam).data(it).V(ip,3)];
-    plot3(X(1),Y(1),Z(1),'or')
-    plot3(X,Y,Z,'-r')
-end
-view(3)
 %% step 7 - sur le PSMN - soon on Matlab
 
 cd 'D:\pono\IFPEN\IFPEN_manips\expe_2021_03_11\for4DPTV\re01_10spatules\Processed_DATA\expe_2021_03_11_re01_spatule10_zaber100mm'
@@ -1826,25 +928,6 @@ L=h5read(filename,'/L');
 datapath = fullfile(session.input_path,'Processed_DATA',nameExpe,filename(1:end-3));
 traj = h52tracks(datapath);
 
-%%
-figure, hold on, box on
-for it = 1 : length(traj)
-    clear x3 y3 z3
-    x3 = traj(it).x;
-    y3 = traj(it).y;
-    z3 = traj(it).z;
-    plot3(x3,y3,z3)
-end
-xlabel('x')
-ylabel('y')
-zlabel('z')
-%% step 9 - Stitching
-
-dfmax = 4; % maximum number of tolerated missing frames to reconnect to trajectories
-dxmax = 2*0.031; % (mm) % maximum tolerated distance between stitchs parts
-dvmax = 0.3;
-lmin  = 2*0.031;
-StitchedTraj = Stitching(session,nameExpe,trackName,dfmax,dxmax,dvmax,lmin);
 
 
 
@@ -2538,14 +1621,14 @@ yoffSet = ypeak-size(ACC1sub,1) + w;
 xoffSet = xpeak-size(ACC1sub,2) + w;
 end
 
-%% matching tracks
+%% DARCY02_matchingTracks
 
 function [itraj2,dtraj,listPotTracks,prelist] = DARCY02_matchingTracks(itrajCam0,trajArray_CAM1,trajArray_CAM2RAW,tform1)
 % We indicate the trajectory in camera 0,
 % it finds the trajectory in camera 1
 %
 minTintersect = 10; % necessary overlapping time
-distThresh = 50;
+distThresh = 10;
 dstimestep = 5;
 
 tminCAM01 = min(trajArray_CAM1(itrajCam0).track(:,3));
@@ -2571,7 +1654,7 @@ for ic = 1 : length(trajArray_CAM2RAW)
     ycam1ic = trajArray_CAM2RAW(ic).track(tmean,2);
     dtraj(ic) = sqrt((xcam1-xcam1ic)^2 + (ycam1-ycam1ic)^2);
 end
-prelist = find(dtraj<50);
+prelist = find(dtraj<distThresh);
 
 for iic = 1 : length(prelist) %1 : length(trajArray_CAM2RAW)
    ic = prelist(iic);
