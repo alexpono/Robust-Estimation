@@ -693,7 +693,7 @@ for ix = 1:length(listX)-1
     end
 end
 % à détailler pour rigueur géométrique
-vStep = 10;
+vStep = 5 % 10
 
 tic
 for itraj3D = 1 : 1 : size(allTrajAllPlanes,2)
@@ -753,12 +753,24 @@ for ix = 1:length(listX)-1
         end
     end
 end
-figure('defaultAxesFontSize',20), box on, hold on
+h3Dquiver = figure('defaultAxesFontSize',20); box on, hold on
 quiver3(X,Y,Z,U,V,W)
 xlabel('x')
 ylabel('y')
 zlabel('z')
 
+%%
+nPperVoxel = zeros(1,length(voxData(:)));
+for iV = 1 : length(nPperVoxel)
+    nPperVoxel(iV) = length([voxData(iV).v ]);
+end
+
+figure('defaultAxesFontSize',20)
+histogram( nPperVoxel)
+set(gca, 'YScale', 'log')
+ylim([0.9  1e4])
+xlabel('quantity of measurements in 1mm3 voxels')
+%%
 figure
 histogram(U(:))
 title('x direction')
@@ -770,6 +782,173 @@ title('vertical direction (y)')
 figure
 histogram(W(:))
 title('z direction')
+
+%% EXPLORATION: try to show nodes and edges and hydrogel beads
+delete(hpnts)
+delete(hline)
+delete(hbhydro)
+
+clear xnds ynds znds verticesPatch
+sNodes    = struct();
+sEdge     = struct();
+sHydbeads = struct();
+
+xnds = [1.5,3,1.5,2,4,3.5,2.3,1.5,1.2];
+ynds = [-.5,-2,-2,-.5,-2,-3,-3.4,-2.2,-.3];
+znds = [11,11,11,13,13,13,13,13,13];
+verticesPatch = [xnds',ynds',znds'];
+
+figure(h3Dquiver)
+% xlim([-1 6])
+% ylim([-4 1])
+% zlim([10.5 14])
+% %xlim([-15 15])
+% %ylim([-15 15])
+% %zlim([0 30])
+% xlim([-6 6])
+% ylim([-10 5])
+% zlim([05 20])
+%hp(1) = patch('Faces',[1,2,3],'Vertices',verticesPatch,'FaceColor','red','faceAlpha',.5);
+
+pE = [0.5,-1,15];
+pF = [ -2, 3,15];
+% points
+hpnts(1) = plot3(2.5,-1,16,'or');
+hpnts(2) = plot3(5.7, 2,18,'or');
+hpnts(3) = plot3(2.5, -1.5,11.5,'or');
+hpnts(4) = plot3(2, -.5,14,'or');
+hpnts(5) = plot3(pE(1),pE(2),pE(3),'or');
+hpnts(6) = plot3(pF(1),pF(2),pF(3),'or');
+% lines
+hline(1) = plot3([2.5,5.7], [-1,2],[16,18],'-r');
+hline(2) = plot3([2.5,2], [-1.5,-.5],[11.5,14],'-r');
+hline(2) = plot3([pE(1),pF(1)], [pE(2),pF(2)],[pE(3),pF(3)],'-r');
+% beads
+hbeads(1) = plot3(2,4,12,'or');
+clear r x y z
+r = 3;
+a =  2;
+b =  4;
+c = 12;
+[x,y,z] = sphere; 
+hbhydro(1) = surf(x*r+a, y*r+b, z*r+c);
+ axis equal;
+ 
+xC = listX(16);
+yC = listY(11);
+zC = listZ(13);
+R  =  5;
+for itetha = 1 : 10 : 360
+    for iPhi = -180 : 10 : 180
+        x3 = xC + R*cosd(itetha) * cosd(iPhi);
+        y3 = yC + R*sind(itetha) * cosd(iPhi);
+        z3 = zC + R * sind(iPhi);
+        plot3(x3,y3,z3,'or')
+    end
+end
+
+xC = listX(26);
+yC = listY(20);
+zC = listZ(12);
+R  =  5;
+for itetha = 1 : 10 : 360
+    for iPhi = -180 : 10 : 180
+        x3 = xC + R*cosd(itetha) * cosd(iPhi);
+        y3 = yC + R*sind(itetha) * cosd(iPhi);
+        z3 = zC + R * sind(iPhi);
+        plot3(x3,y3,z3,'or')
+    end
+end
+
+lightangle(-45,30)
+% h3Dquiver.FaceLighting = 'gouraud';
+% h3Dquiver.AmbientStrength = 0.3;
+% h3Dquiver.DiffuseStrength = 0.8;
+% h3Dquiver.SpecularStrength = 0.9;
+% h3Dquiver.SpecularExponent = 25;
+% h3Dquiver.BackFaceLighting = 'unlit';
+%% planes 
+hp(2) = patch('Faces',[1,2,5,4],'Vertices',verticesPatch,'FaceColor','red','faceAlpha',.5);
+hp(3) = patch('Faces',[2,5,6],'Vertices',verticesPatch,'FaceColor','red','faceAlpha',.5);
+hp(4) = patch('Faces',[2,3,7,6],'Vertices',verticesPatch,'FaceColor','red','faceAlpha',.5);
+hp(5) = patch('Faces',[3,7,8],'Vertices',verticesPatch,'FaceColor','red','faceAlpha',.5);
+hp(6) = patch('Faces',[1,3,8,9],'Vertices',verticesPatch,'FaceColor','red','faceAlpha',.5);
+hp(7) = patch('Faces',[1,4,9],'Vertices',verticesPatch,'FaceColor','red','faceAlpha',.5);
+
+%% EXPLORATION : isosurface
+
+%# create coordinates
+[xx,yy,zz] = meshgrid(-15:15,-15:15,-15:15);
+%# calculate distance from center of the cube
+rr = sqrt(xx.^2 + yy.^2 + zz.^2);
+
+%# create the isosurface by thresholding at a iso-value of 10
+isosurface(xx,yy,zz,rr,10);
+
+%# make sure it will look like a sphere
+axis equal 
+%%
+close all
+tic
+clear rr
+[xx,yy,zz] = meshgrid(  1:length(listX)-1,...
+                        1:length(listY)-1,...
+                        1:length(listZ)-1);
+for ix = 1:length(listX)-1
+    for iy = 1:length(listY)-1
+        for iz = 1:length(listZ)-1
+            if length([voxData(ix,iy,iz).v ]) > 1
+                rr(ix,iy,iz) = 2;
+            end
+        end
+    end
+end
+%# create the isosurface by thresholding at a iso-value of 10
+isosurface(xx,yy,zz,rr,1);
+
+%# make sure it will look like a sphere
+axis equal 
+hold on
+xC = 16;
+yC = 11;
+zC = 13;
+R  =  5;
+for itetha = 1 : 2 : 360
+    for iPhi = -180 : 10 : 180
+        x3 = xC + R*cosd(itetha) * cosd(iPhi);
+        y3 = yC + R*sind(itetha) * cosd(iPhi);
+        z3 = zC + R * sind(iPhi);
+        plot3(x3,y3,z3,'or')
+    end
+end
+
+xC = 26;
+yC = 20;
+zC = 12;
+R  =  5;
+for itetha = 1 : 2 : 360
+    for iPhi = -180 : 10 : 180
+        x3 = xC + R*cosd(itetha) * cosd(iPhi);
+        y3 = yC + R*sind(itetha) * cosd(iPhi);
+        z3 = zC + R * sind(iPhi);
+        plot3(x3,y3,z3,'or')
+    end
+end
+xlabel('x')
+ylabel('y')
+zlabel('z')
+box on
+toc
+%% EXPLORATION: best way to plot a sphere
+clear r x y z
+r = 25;
+a =  2;
+b =  4;
+c = 12;
+figure('defaultAxesFontSize',20)
+[x,y,z] = sphere; 
+surf(x*r+a, y*r+b, z*r+c);
+ axis equal;
 %% exploration voxel
 d = [-1 1];
 [x,y,z] = meshgrid(d,d,d);  % A cube
