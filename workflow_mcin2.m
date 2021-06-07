@@ -999,7 +999,7 @@ starty = -18.5 * ones(size(startx));
 % [startx,starty,startz] = meshgrid([min(X(:)) : 1 : max(X(:))],...
 %                                   [min(Y(:)) : 5 : max(Y(:))],...
 %                                   [min(Z(:)) : 1 : max(Z(:))]); 
-h = streamline(X,Y,Z,U,V,W,startx,starty,startz,.1);
+h = streamline(Xlc,Ylc,Zlc,U,V,W,startx,starty,startz,.1);
 ce = clock; fprintf('done at %0.2dh%0.2dm in %0.0f s \n',ce(4),ce(5), etime(ce,ci))
 
 %%
