@@ -738,26 +738,115 @@ end
 
 
 
-clear U V W X Y Z
+clear normU U V W X Y Z
 for ix = 1:length(listX)-1
     for iy = 1:length(listY)-1
         for iz = 1:length(listZ)-1
-            if ~isnan(voxData(ix,iy,iz).U)
             X(ix,iy,iz) = voxData(ix,iy,iz).x;
             Y(ix,iy,iz) = voxData(ix,iy,iz).y;
             Z(ix,iy,iz) = voxData(ix,iy,iz).z;
+            if ~isnan(voxData(ix,iy,iz).U)
             U(ix,iy,iz) = max(-.2,min(.2,voxData(ix,iy,iz).U));
             V(ix,iy,iz) = max(-.2,min(.2,voxData(ix,iy,iz).V));
             W(ix,iy,iz) = max(-.2,min(.2,voxData(ix,iy,iz).W));
+            normU(ix,iy,iz) = norm([U(ix,iy,iz),V(ix,iy,iz),W(ix,iy,iz)]);
             end
         end
     end
 end
-h3Dquiver = figure('defaultAxesFontSize',20); box on, hold on
+
+%% 3D quiver 
+close all
+h3Dquiver = figure('defaultAxesFontSize',20,'position',[53   410   914   555]); box on, hold on
 quiver3(X,Y,Z,U,V,W)
 xlabel('x')
 ylabel('y')
 zlabel('z')
+view(3)
+ylim([ -19 -18])
+zlim([ 5 20])
+axis equal
+
+% from coordinate xP yP zP and normal uP vP wP define a plane
+% then show values of vBox in this plane 
+
+xP =  0;
+yP = -5;
+zP = 10;
+uP = 0;
+vP = 0;
+wP = 1;
+% define the two vectors perpendicular to uPvPwP:
+e10P = 1;
+e01P = 1;
+figure(h3Dquiver)
+plot3(xP,yP,zP,'or')
+h2Dplane = figure('defaultAxesFontSize',20,'position',[1000 100 700 700]);
+
+%%
+[Xs,Ys,Zs] = meshgrid(-2:.2:2);
+V = X.*exp(-X.^2-Y.^2-Z.^2);
+%%
+x = min(X(:)) : 1 : max(X(:));
+y = min(Y(:)) : 1 : max(Y(:));
+z = min(Z(:)) : 1 : max(Z(:));
+[X,Y,Z] = meshgrid(x,y,z);
+% close all
+xslice = [1];   
+yslice = [-10];
+zslice = 10;
+slice(X,Y,Z,normU,xslice,yslice,zslice)
+xlabel('x')
+ylabel('y')
+zlabel('z')
+%%
+point = [1,-5,10];
+normal = [0,0,1];
+%%
+hold on
+pA = [18 20 10];
+pB = [24 13 10];
+point = (pA + pB ) / 2;
+normal = pB-pA;
+
+[B,x,y,z] = obliqueslice(normU,point,normal);
+
+% figure
+surf(x,y,z,B,'EdgeColor','None','HandleVisibility','off');
+grid on
+view([-38 12])
+colormap(gray)
+xlabel('x-axis')
+ylabel('y-axis');
+zlabel('z-axis');
+title('Slice in 3-D Coordinate Space')
+
+%%
+volshow(normU)
+%%
+cmap = parula(256);
+s = sliceViewer(normU,'Colormap',cmap);
+%%
+cmap = parula(256);
+os = orthosliceViewer(normU,'Colormap',cmap);
+
+addlistener(os,'CrosshairMoving',@allevents);
+addlistener(os,'CrosshairMoved',@allevents);
+%%
+%# a plane is a*x+b*y+c*z+d=0
+%# [a,b,c] is the normal. Thus, we have to calculate
+%# d and we're set
+d = -point*normal'; %'# dot product for less typing
+
+%# create x,y
+[xx,yy]=ndgrid(1:10,1:10);
+
+%# calculate corresponding z
+z = (-normal(1)*xx - normal(2)*yy - d)/normal(3);
+
+%# plot the surface
+figure
+surf(xx,yy,z)
 
 %%
 nPperVoxel = zeros(1,length(voxData(:)));
@@ -874,6 +963,60 @@ hp(4) = patch('Faces',[2,3,7,6],'Vertices',verticesPatch,'FaceColor','red','face
 hp(5) = patch('Faces',[3,7,8],'Vertices',verticesPatch,'FaceColor','red','faceAlpha',.5);
 hp(6) = patch('Faces',[1,3,8,9],'Vertices',verticesPatch,'FaceColor','red','faceAlpha',.5);
 hp(7) = patch('Faces',[1,4,9],'Vertices',verticesPatch,'FaceColor','red','faceAlpha',.5);
+
+%% EXPLORATION lignes de courant
+
+close all
+h3Dquiver = figure('defaultAxesFontSize',20,'position',[53   410   914   555]); box on, hold on
+quiver3(X,Y,Z,U,V,W)
+xlabel('x')
+ylabel('y')
+zlabel('z')
+view(3)
+ylim([ -19 -18])
+zlim([ 5 20])
+axis equal
+
+
+ci = clock; fprintf('start at %0.2dh%0.2dm\n',ci(4),ci(5))
+%X 
+%Y 
+%Z 
+%U = U;
+%V = V;
+%W = W;
+
+clear startx starty startz
+[startx,startz] = meshgrid( [min(X(:)) : 1 : max(X(:))],...
+                            [min(Z(:)) : 1 : max(Z(:))]);
+starty = -18.5 * ones(size(startx));
+
+% [startx,starty,startz] = meshgrid([min(X(:)) : 1 : max(X(:))],...
+%                                   [min(Y(:)) : 5 : max(Y(:))],...
+%                                   [min(Z(:)) : 1 : max(Z(:))]); 
+h = streamline(X,Y,Z,U,V,W,startx,starty,startz,.1);
+ce = clock; fprintf('done at %0.2dh%0.2dm in %0.0f s \n',ce(4),ce(5), etime(ce,ci))
+
+%% loop on the streamlines
+% find the largest one
+
+
+h3Dquiver = figure('defaultAxesFontSize',20,'position',[53   410   914   555]); box on, hold on
+quiver3(X,Y,Z,U,V,W)
+xlabel('x')
+ylabel('y')
+zlabel('z')
+view(3)
+
+lSL = []; % length of stream line
+for il = 1 : length(h)
+    lSL(il) = length(h(il).XData);
+end
+[a,b] = max(lSL);
+xL = h(b).XData;
+yL = h(b).YData;
+zL = h(b).ZData;
+plot3(xL,yL,zL,'lineWidth',4)
 
 %% EXPLORATION : isosurface
 
@@ -1173,7 +1316,6 @@ for iselTraj = 1 : size(cam1cam2RAW,1)
     
     
 end
-
 ce = clock; fprintf('done at %0.2dh%0.2dm in %0.0f s \n',c(4),c(5), etime(ce,ci))
 
 %%
@@ -2131,3 +2273,17 @@ if ipt > 0
 end
 
 end
+
+
+%%
+function allevents(src,evt)
+evname = evt.EventName;
+    switch(evname)
+        case{'CrosshairMoved'}
+            disp(['Crosshair moved previous position: ' mat2str(evt.PreviousPosition)]);
+            disp(['Crosshair moved current position: ' mat2str(evt.CurrentPosition)]);
+        case{'CrosshairMoving'}
+            disp(['Crosshair moving previous position: ' mat2str(evt.PreviousPosition)]);
+            disp(['Crosshair moving current position: ' mat2str(evt.CurrentPosition)]);
+    end
+ end
