@@ -966,6 +966,11 @@ hp(7) = patch('Faces',[1,4,9],'Vertices',verticesPatch,'FaceColor','red','faceAl
 
 %% EXPLORATION lignes de courant
 
+x = min(X(:)) : 1 : max(X(:));
+y = min(Y(:)) : 1 : max(Y(:));
+z = min(Z(:)) : 1 : max(Z(:));
+[Xlc,Ylc,Zlc] = meshgrid(x,y,z);
+
 close all
 h3Dquiver = figure('defaultAxesFontSize',20,'position',[53   410   914   555]); box on, hold on
 quiver3(X,Y,Z,U,V,W)
@@ -987,8 +992,8 @@ ci = clock; fprintf('start at %0.2dh%0.2dm\n',ci(4),ci(5))
 %W = W;
 
 clear startx starty startz
-[startx,startz] = meshgrid( [min(X(:)) : 1 : max(X(:))],...
-                            [min(Z(:)) : 1 : max(Z(:))]);
+[startx,startz] = meshgrid( [min(Xlc(:)) : 1 : max(Xlc(:))],...
+                            [min(Zlc(:)) : 1 : max(Zlc(:))]);
 starty = -18.5 * ones(size(startx));
 
 % [startx,starty,startz] = meshgrid([min(X(:)) : 1 : max(X(:))],...
@@ -996,6 +1001,14 @@ starty = -18.5 * ones(size(startx));
 %                                   [min(Z(:)) : 1 : max(Z(:))]); 
 h = streamline(X,Y,Z,U,V,W,startx,starty,startz,.1);
 ce = clock; fprintf('done at %0.2dh%0.2dm in %0.0f s \n',ce(4),ce(5), etime(ce,ci))
+
+%%
+tic
+h = streamtube(X,Y,Z,U,V,W,startx,starty,startz);
+shading interp;
+camlight; 
+lighting gouraud
+toc
 
 %% loop on the streamlines
 % find the largest one
@@ -1016,8 +1029,24 @@ end
 xL = h(b).XData;
 yL = h(b).YData;
 zL = h(b).ZData;
-plot3(xL,yL,zL,'lineWidth',4)
-
+plot3(xL,yL,zL,'-or','lineWidth',4)
+xlim([xL(end)-4 xL(end-2)+4])
+ylim([yL(end)-4 yL(end-2)+4])
+zlim([zL(end)-4 zL(end-2)+4])
+plot3(xL(end),yL(end),zL(end),'ob')
+grid on
+%%
+point = [xL(end),yL(end),zL(end)];
+normal = [xL(end)-xL(end-5),yL(end)-yL(end-5),zL(end)-zL(end-5)];
+t=(0:10:360)';
+circle0=[cosd(t) sind(t) zeros(length(t),1)];
+r=vrrotvec2mat(vrrotvec([0 0 1],normal));
+circle=circle0*r'+repmat(point,length(circle0),1);
+patch(circle(:,1),circle(:,2),circle(:,3),.5);
+axis square; grid on;
+%add line
+line=[point;point+normr(normal)]
+hold on;plot3(line(:,1),line(:,2),line(:,3),'LineWidth',5)
 %% EXPLORATION : isosurface
 
 %# create coordinates
