@@ -60,7 +60,7 @@ iexpe = 2; % 1 / 2 / 3
 allresults = struct();
 file_log_ID = fopen('log_run3.txt', 'a');
  
-for iplane = 7 : 21
+for iplane = 1 : 216
 
 iSeqa = iplane*2-1;
 iSeqb = iplane*2;
