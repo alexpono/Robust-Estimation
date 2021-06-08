@@ -992,15 +992,15 @@ axis equal
 %% home made streamline
 iST = 1; % index streamline
 doVisual = 'yes'; % yes no
-figure
+
 hold on
 %%% %%% %%%
 %%% %%% %%%
 %%% %%% %%%
 % initialisation
 startx = 1.5;
-starty = -14.5;
-startz = 11.5;
+starty = -18.5;
+startz = 10.5;
 
 streamline(iST).x = startx;
 streamline(iST).y = starty;
@@ -1063,9 +1063,9 @@ for iix = 1 : 1 : 3
                     ccrnsY = newpoint(2)+[-.5,-.5,+.5,+.5,-.5,-.5,+.5,+.5]; % cube corners
                     ccrnsZ = newpoint(3)+[-.5,-.5,-.5,-.5,+.5,+.5,+.5,+.5]; % cube corners
                     ccrnsXYZ = [ccrnsX',ccrnsY',ccrnsZ'];
-                    fP = [1,2,4,3;3,4,8,7;7,8,6,5;1,2,6,5;2,4,8,6;1,3,7,5]; % faces
-                    patch('faces',fP,'vertices',ccrnsXYZ,...
-                        'facecolor',colP,'faceAlpha',.5,'edgeColor','k')
+                   % fP = [1,2,4,3;3,4,8,7;7,8,6,5;1,2,6,5;2,4,8,6;1,3,7,5]; % faces
+                   % patch('faces',fP,'vertices',ccrnsXYZ,...
+                   %     'facecolor',colP,'faceAlpha',.5,'edgeColor','k')
             end
         end
     end
@@ -1083,17 +1083,16 @@ patch('faces',fP,'vertices',ccrnsXYZ,...
     'facecolor','k','faceAlpha',.5,'edgeColor','k')
 
 % test if it contains a speed value
-X(voxNeig(b).ix,1,1),Y(1,voxNeig(b).iy,1),Z(1,1,voxNeig(b).iz)
-
 nAttemps = size(voxNeig,2);
 while nAttemps
+    [~,b] = min([voxNeig.d]);
     nAttemps = nAttemps -1;
-if U(voxNeig(b).ix,voxNeig(b).iy,voxNeig(b).iz) ~= 0
-break
-else
-    % fprintf('killing an element\n')
-    voxNeig(b) = [];
-end
+    if U(voxNeig(b).ix,voxNeig(b).iy,voxNeig(b).iz) ~= 0
+        break
+    else
+        % fprintf('killing an element\n')
+        voxNeig(b) = [];
+    end
 end
 if nAttemps == 0
     break
