@@ -52,9 +52,6 @@ allExpeStrct(iexpe).longmin = 10;         % for Benjamin tracks function:
 
 %%
 
-%%
-
-
 
 
 %% STEP 1 - findTracks
@@ -996,12 +993,15 @@ clear startx starty startz
                             [min(Zlc(:)) : 1 : max(Zlc(:))]);
 starty = -18.5 * ones(size(startx));
 
-% [startx,starty,startz] = meshgrid([min(X(:)) : 1 : max(X(:))],...
-%                                   [min(Y(:)) : 5 : max(Y(:))],...
-%                                   [min(Z(:)) : 1 : max(Z(:))]); 
+[startx,starty,startz] = meshgrid([min(X(:)) : 1 : max(X(:))],...
+                                  [min(Y(:)) : 1 : max(Y(:))],...
+                                  [min(Z(:)) : 1 : max(Z(:))]); 
 h = streamline(Xlc,Ylc,Zlc,U,V,W,startx,starty,startz,.1);
 ce = clock; fprintf('done at %0.2dh%0.2dm in %0.0f s \n',ce(4),ce(5), etime(ce,ci))
-
+%%
+xlim([5.5 9.5])
+ylim([1   5  ])
+zlim([14.5 18.5])
 %%
 tic
 h = streamtube(X,Y,Z,U,V,W,startx,starty,startz);
@@ -1035,9 +1035,22 @@ ylim([yL(end)-4 yL(end-2)+4])
 zlim([zL(end)-4 zL(end-2)+4])
 plot3(xL(end),yL(end),zL(end),'ob')
 grid on
-%%
+
 point = [xL(end),yL(end),zL(end)];
 normal = [xL(end)-xL(end-5),yL(end)-yL(end-5),zL(end)-zL(end-5)];
+normal = normal / norm(normal);
+
+% find perpendicular vectors and plot them
+quiver3(point(1),point(2),point(3),normal(1),normal(2),normal(3),'lineWidth',4)
+v_perp1 = find_perp(normal)/norm(find_perp(normal));
+v_perp2 = cross(normal,v_perp1)/norm(cross(normal,v_perp1));
+quiver3(point(1),point(2),point(3),v_perp1(1),v_perp1(2),v_perp1(3),'lineWidth',4)
+quiver3(point(1),point(2),point(3),v_perp2(1),v_perp2(2),v_perp2(3),'lineWidth',4)
+
+% list of starting points at 1 mm from last point of the trajectory.
+
+%%
+
 t=(0:10:360)';
 circle0=[cosd(t) sind(t) zeros(length(t),1)];
 r=vrrotvec2mat(vrrotvec([0 0 1],normal));
@@ -2304,7 +2317,7 @@ end
 end
 
 
-%%
+%% for orthoslice viewing
 function allevents(src,evt)
 evname = evt.EventName;
     switch(evname)
@@ -2315,4 +2328,49 @@ evname = evt.EventName;
             disp(['Crosshair moving previous position: ' mat2str(evt.PreviousPosition)]);
             disp(['Crosshair moving current position: ' mat2str(evt.CurrentPosition)]);
     end
- end
+end
+ 
+%% function: calculate perpendicular to a vector in 3D
+
+function v_perp = find_perp(v_input)
+%FIND_PERP Finds one of the infinitely number of perpendicular vectors of
+%   the input. The input vector v_input is a size 3,1 or 3,1 vector (only
+%   3-dim supported)
+    
+    if length(v_input) ~= 3     % Can't be wrong dim if len=3
+        error('find_perp:WrongSize','Input vector has wrong size');
+    end
+    
+    if sum(v_input ~= 0) == 0
+        error('find_perp:GivenZeroVector','Zero vector given as input');
+    end
+    
+    v_perp = zeros(size(v_input));
+    
+    if sum(v_input ~= 0) == 3       % Every element is not-zero
+        v_perp(1) = 1;
+        v_perp(3) = -v_input(1)/(v_input(3));
+    elseif sum(v_input ~= 0) == 2
+        if v_input(1) == 0
+            v_perp(1:2) = [1 1];
+            v_perp(3) = -v_input(2)/(v_input(3));
+        elseif v_input(2) == 0
+            v_perp(1:2) = [1 1];
+            v_perp(3) = -v_input(1)/(v_input(3));
+        else
+            v_perp(2:3) = [1 1];
+            v_perp(1) = -v_input(2)/(v_input(1));
+        end
+    else
+        if v_input(1) ~= 0
+            v_perp(2) = 1;
+        else
+            v_perp(1) = 1;
+        end
+    end
+    
+    if abs(dot(v_perp,v_input)) > 1E-09      % Must take round-off into account (the dot product is not always perfect zero)
+        error('find_perp:DotProdNotZero',...
+            'A perp vector could not be found (failed dot product test). Might there be a bug?');
+    end
+end
