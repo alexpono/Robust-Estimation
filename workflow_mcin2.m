@@ -22,7 +22,7 @@ allExpeStrct(iexpe).name        = 'expe20210505_run3';
 allExpeStrct(iexpe).inputFolder = ...
     strcat('D:\IFPEN\IFPEN_manips\expe_2021_05_05\run03\');
 allExpeStrct(iexpe).analysisFolder = ...
-    strcat('D:\pono\IFPEN\analysisExperiments\analysis_expe_20210505\');
+    strcat('D:\IFPEN\analysisExperiments\analysis_expe_20210505_run3\');
 allExpeStrct(iexpe).CalibFile = ...
     strcat('D:\IFPEN\IFPEN_manips\expe_2021_05_06_calibration\reorderCalPlanes4test\calib.mat');
 allExpeStrct(iexpe).centerFinding_th = 2; % automatiser la définition de ces paramètres?
@@ -58,6 +58,7 @@ allExpeStrct(iexpe).longmin = 10;         % for Benjamin tracks function:
 iexpe = 2; % 1 / 2 / 3
 
 allresults = struct();
+cd(allExpeStrct(iexpe).analysisFolder)
 file_log_ID = fopen('log_run3.txt', 'a');
  
 for iplane = 1 : 216
@@ -537,7 +538,7 @@ cd(allExpeStrct(iexpe).analysisFolder)
 save('allResults_auFilDeLEau.mat','allresults')
 
 cPlane_f = clock;
-fprintf(file_log_ID, 'just runned plane %0.3d in %0.0f s \n', iplane , etime(cPlane_i,cPlane_f) );
+fprintf(file_log_ID, 'just run plane %0.3d in %0.0f s \n', iplane , etime(cPlane_f,cPlane_i) );
 
 end
 
