@@ -981,10 +981,22 @@ zlim([ 5 20])
 axis equal
 
 %% home made streamline
+iST = 1; % index streamline
 doVisual = 'yes'; % yes no
+figure
+hold on
+%%% %%% %%%
+%%% %%% %%%
+%%% %%% %%%
+% initialisation
 startx = 1.5;
 starty = -14.5;
 startz = 11.5;
+
+streamline(iST).x = startx;
+streamline(iST).y = starty;
+streamline(iST).z = startz;
+
 ix = find(X(:,1,1)==startx);
 iy = find(Y(1,:,1)==starty);
 iz = find(Z(1,1,:)==startz);
@@ -993,11 +1005,21 @@ point = [X(ix,1,1),Y(1,iy,1),Z(1,1,iz)];
 normal = [  U(ix,iy,iz),...     
             V(ix,iy,iz),...
             W(ix,iy,iz)];
-normal = 10 * normal / norm(normal);
+streamline(iST).UVW = normal;
 
+normal =  normal / norm(normal);
+
+%%% %%% %%%
+%%% %%% %%%
+%%% %%% %%%
+% propagation
+while(1)
+    fprintf('yo % 0.2d \n',length(streamline(iST).x))
 switch doVisual
     case 'yes'
-        quiver3(point(1),point(2),point(3),normal(1),normal(2),normal(3),'lineWidth',4)
+        quiver3(    point(1),    point(2),    point(3),...
+                10*normal(1),10*normal(2),10*normal(3),...
+                'lineWidth',4)
 end
 % loop on the neighbouring voxels from the closest to the farthest and stop
 % when UVW exists % there is 26 possible neighbours
@@ -1006,20 +1028,87 @@ ivn = 0;
 for iix = 1 : 1 : 3
     for iiy = 1 : 1 : 3
         for iiz = 1 : 1 : 3
-            if iix == 2 && iiy == 2 && iiz == 2 || 
-                continue
+            newpoint = [X(ix + iix -2,1,1),Y(1,iy + iiy -2,1),Z(1,1,iz + iiz -2)];
+            A = normal;
+            B = [iix-2,iiy-2,iiz-2];
+            lProj = dot(A, B, 2) ./ sum(B .* B, 2); % using https://fr.mathworks.com/matlabcentral/answers/2216-projecting-a-vector-to-another-vector
+            if  (lProj<0)
+                colP = 'r';
+            elseif (iix == 2 && iiy == 2 && iiz == 2) %||
+                
+                colP = 'y';
             else
+                colP = 'g';
                 ivn = ivn + 1;
                 voxNeig(ivn).ix = ix + iix -2;
                 voxNeig(ivn).iy = iy + iiy -2;
                 voxNeig(ivn).iz = iz + iiz -2;
-                newpoint = [X(ix + iix -2,1,1),Y(1,iy + iiy -2,1),Z(1,1,iz + iiz -2)];
                 voxNeig(ivn).d = point_to_line(newpoint, point, point + normal);
+                voxNeig(ivn).proj = lProj;
+
+            end
+            switch doVisual
+                case 'yes'
+                    % make a colored cube
+                    ccrnsX = newpoint(1)+[-.5,+.5,-.5,+.5,-.5,+.5,-.5,+.5]; % cube corners
+                    ccrnsY = newpoint(2)+[-.5,-.5,+.5,+.5,-.5,-.5,+.5,+.5]; % cube corners
+                    ccrnsZ = newpoint(3)+[-.5,-.5,-.5,-.5,+.5,+.5,+.5,+.5]; % cube corners
+                    ccrnsXYZ = [ccrnsX',ccrnsY',ccrnsZ'];
+                    fP = [1,2,4,3;3,4,8,7;7,8,6,5;1,2,6,5;2,4,8,6;1,3,7,5]; % faces
+                    patch('faces',fP,'vertices',ccrnsXYZ,...
+                        'facecolor',colP,'faceAlpha',.5,'edgeColor','k')
             end
         end
     end
 end
+% find closest voxel and test if it contains a speed value
+[~,b] = min([voxNeig.d]);
+newpoint = [X(voxNeig(b).ix,1,1),Y(1,voxNeig(b).iy,1),Z(1,1,voxNeig(b).iz)];
+% make a colored cube
+ccrnsX = newpoint(1)+[-.55,+.55,-.55,+.55,-.55,+.55,-.55,+.55]; % cube corners
+ccrnsY = newpoint(2)+[-.55,-.55,+.55,+.55,-.55,-.55,+.55,+.55]; % cube corners
+ccrnsZ = newpoint(3)+[-.55,-.55,-.55,-.55,+.55,+.55,+.55,+.55]; % cube corners
+ccrnsXYZ = [ccrnsX',ccrnsY',ccrnsZ'];
+fP = [1,2,4,3;3,4,8,7;7,8,6,5;1,2,6,5;2,4,8,6;1,3,7,5]; % faces
+patch('faces',fP,'vertices',ccrnsXYZ,...
+    'facecolor','k','faceAlpha',.5,'edgeColor','k')
 
+% test if it contains a speed value
+X(voxNeig(b).ix,1,1),Y(1,voxNeig(b).iy,1),Z(1,1,voxNeig(b).iz)
+
+nAttemps = size(voxNeig,2);
+while nAttemps
+    nAttemps = nAttemps -1;
+if U(voxNeig(b).ix,voxNeig(b).iy,voxNeig(b).iz) ~= 0
+break
+else
+    % fprintf('killing an element\n')
+    voxNeig(b) = [];
+end
+end
+if nAttemps == 0
+    break
+end
+% streamline(iST).UVW = normal;
+ix = voxNeig(b).ix;
+iy = voxNeig(b).iy;
+iz = voxNeig(b).iz;
+% move the particle to the next voxel where there is data
+point = [X(ix,1,1),Y(1,iy,1),Z(1,1,iz)];
+normal = [  U(ix,iy,iz),...
+    V(ix,iy,iz),...
+    W(ix,iy,iz)];
+streamline(iST).UVW = [streamline(iST).UVW,normal];
+normal =  normal / norm(normal);
+streamline(iST).x = [streamline(iST).x,point(1)];
+streamline(iST).y = [streamline(iST).y,point(2)];
+streamline(iST).z = [streamline(iST).z,point(3)];
+end
+%% Je suis ICI
+
+%%
+  % EDITED, twice
+C = bsxfun(@times, lenC, B)
 %%
 A = repmat([10,10,-10] ,[88,1]);
 B = repmat([1,1,-1], [88,1]);
