@@ -961,7 +961,8 @@ hp(5) = patch('Faces',[3,7,8],'Vertices',verticesPatch,'FaceColor','red','faceAl
 hp(6) = patch('Faces',[1,3,8,9],'Vertices',verticesPatch,'FaceColor','red','faceAlpha',.5);
 hp(7) = patch('Faces',[1,4,9],'Vertices',verticesPatch,'FaceColor','red','faceAlpha',.5);
 
-%% EXPLORATION lignes de courant
+%% EXPLORATION lignes de courant % there is a bug 
+%  -> try to do it by hand ..
 
 x = min(X(:)) : 1 : max(X(:));
 y = min(Y(:)) : 1 : max(Y(:));
@@ -979,7 +980,53 @@ ylim([ -19 -18])
 zlim([ 5 20])
 axis equal
 
+%% home made streamline
+doVisual = 'yes'; % yes no
+startx = 1.5;
+starty = -14.5;
+startz = 11.5;
+ix = find(X(:,1,1)==startx);
+iy = find(Y(1,:,1)==starty);
+iz = find(Z(1,1,:)==startz);
+% move the particle to the next voxel where there is data
+point = [X(ix,1,1),Y(1,iy,1),Z(1,1,iz)];
+normal = [  U(ix,iy,iz),...     
+            V(ix,iy,iz),...
+            W(ix,iy,iz)];
+normal = 10 * normal / norm(normal);
 
+switch doVisual
+    case 'yes'
+        quiver3(point(1),point(2),point(3),normal(1),normal(2),normal(3),'lineWidth',4)
+end
+% loop on the neighbouring voxels from the closest to the farthest and stop
+% when UVW exists % there is 26 possible neighbours
+voxNeig = struct();
+ivn = 0;
+for iix = 1 : 1 : 3
+    for iiy = 1 : 1 : 3
+        for iiz = 1 : 1 : 3
+            if iix == 2 && iiy == 2 && iiz == 2 || 
+                continue
+            else
+                ivn = ivn + 1;
+                voxNeig(ivn).ix = ix + iix -2;
+                voxNeig(ivn).iy = iy + iiy -2;
+                voxNeig(ivn).iz = iz + iiz -2;
+                newpoint = [X(ix + iix -2,1,1),Y(1,iy + iiy -2,1),Z(1,1,iz + iiz -2)];
+                voxNeig(ivn).d = point_to_line(newpoint, point, point + normal);
+            end
+        end
+    end
+end
+
+%%
+A = repmat([10,10,-10] ,[88,1]);
+B = repmat([1,1,-1], [88,1]);
+lenC = dot(A, B, 2) ./ sum(B .* B, 2);  % EDITED, twice
+C = bsxfun(@times, lenC, B)
+
+%% built in streamline
 ci = clock; fprintf('start at %0.2dh%0.2dm\n',ci(4),ci(5))
 %X 
 %Y 
@@ -2373,4 +2420,13 @@ function v_perp = find_perp(v_input)
         error('find_perp:DotProdNotZero',...
             'A perp vector could not be found (failed dot product test). Might there be a bug?');
     end
+end
+
+%% distance point to line,
+%  from 
+
+function d = point_to_line(pt, v1, v2)
+      a = v1 - v2;
+      b = pt - v2;
+      d = norm(cross(a,b)) / norm(a);
 end
