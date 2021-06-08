@@ -1002,6 +1002,9 @@ hold on
 startx = 1.5;
 starty = -18.5;
 startz = 10.5;
+startx = -0.5;
+starty = 1.5;
+startz = 14.5;
 
 streamline(iST).x = startx;
 streamline(iST).y = starty;
