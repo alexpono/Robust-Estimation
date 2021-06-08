@@ -58,12 +58,14 @@ allExpeStrct(iexpe).longmin = 10;         % for Benjamin tracks function:
 iexpe = 2; % 1 / 2 / 3
 
 allresults = struct();
-
+file_log_ID = fopen('log_run3.txt', 'a');
+ 
 for iplane = 7 : 21
 
 iSeqa = iplane*2-1;
 iSeqb = iplane*2;
 
+cPlane_i = clock;
 c1i = clock; fprintf('starts looking for trajectories at %0.2dh%0.2dm\n',c1i(4),c1i(5))
 
 allTraj = struct();
@@ -531,8 +533,15 @@ allresults(iplane).listMatchedTracks = listMatchedTracks;
 allresults(iplane).tform1 = tform1;
 allresults(iplane).filenamePlane = filenamePlane;
 
+cd(allExpeStrct(iexpe).analysisFolder)
+save('allResults_auFilDeLEau.mat','allresults')
+
+cPlane_f = clock;
+fprintf(file_log_ID, 'just runned plane %0.3d in %0.0f s \n', iplane , etime(cPlane_i,cPlane_f) );
+
 end
 
+fclose(file_log_ID)
 %% figure for a whole experiment
 figure('defaultAxesFontSize',20), box on, hold on
 edges = [0:0.1:30];
