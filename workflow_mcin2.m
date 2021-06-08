@@ -63,6 +63,8 @@ file_log_ID = fopen('log_run3.txt', 'a');
  
 for iplane = 1 : 216
 
+    close all
+
 iSeqa = iplane*2-1;
 iSeqb = iplane*2;
 
