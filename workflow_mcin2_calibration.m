@@ -7,12 +7,10 @@ if strcmp(name,'DESKTOP-3ONLTD9')
     cd(strcat('C:\Users\Lenovo\Jottacloud\RECHERCHE\Projets\21_IFPEN\',...
         'manips\expe_2021_05_06_calibration_COPY\images4calibration'))
 elseif strcmp(name,'DARCY')
-    % cd('D:\IFPEN\IFPEN_manips\expe_2021_05_06_calibration\reorderCalPlanes4test')
-    cd('D:\IFPEN\IFPEN_manips\expe_2021_05_28_calibration_in_air\calibration02\forCalibration')
-    % cd('C:\Users\darcy\Desktop\git\Robust-Estimation\calibrationImagesTraining01')
+    cd('E:\manipIFPEN\expe_2021_06_09_calibration\calibrationImages')
 end
 
-zPlane = [00:10:40]; % [00:05:40]; % mm
+zPlane = [00:5:35]; 
 camName = {1,2};
 gridSpace = 5;        % mm
 
@@ -271,7 +269,7 @@ end
 
 %% build the calib file
 
-savepath = 'D:\IFPEN\IFPEN_manips\expe_2021_05_28_calibration_in_air\calibrationFile';
+savepath = 'E:\manipIFPEN\expe_2021_06_09_calibration\calibrationImages\';
 %savepath = 'D:\IFPEN\IFPEN_manips\expe_2021_05_20_calibration_air\forCalib';
 % from calib2D function
 % pimg      : center coordinates in original image [in pixels]

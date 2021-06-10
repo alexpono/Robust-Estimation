@@ -50,18 +50,35 @@ allExpeStrct(iexpe).maxdist = 3;          % for Benjamin tracks function:
 allExpeStrct(iexpe).longmin = 10;         % for Benjamin tracks function:
 % minimum number of points of a trajectory
 
+iexpe = 4;
+
+allExpeStrct(iexpe).type        = 'experiment'; % experiment / calibration
+allExpeStrct(iexpe).name        = 'expe20210609_run05_200fps';
+allExpeStrct(iexpe).inputFolder = ...
+    strcat('E:\manipIFPEN\expe_2021_06_09\run05_200fps\');
+allExpeStrct(iexpe).analysisFolder = ...
+    strcat('D:\IFPEN\analysisExperiments\analysis_expe_2021_06_09\run05_200fps\');
+allExpeStrct(iexpe).CalibFile = ...
+    strcat('E:\manipIFPEN\expe_2021_06_09_calibration\calibrationImages\calib.mat');
+allExpeStrct(iexpe).centerFinding_th = 5; % automatiser la définition de ces paramètres?
+allExpeStrct(iexpe).centerFinding_sz = 2; % automatiser la définition de ces paramètres?
+allExpeStrct(iexpe).maxdist = 3;          % for Benjamin tracks function:
+% max distances between particules from frame to frame
+allExpeStrct(iexpe).longmin = 8;         % for Benjamin tracks function:
+% minimum number of points of a trajectory
+
 %%
 
 
 
 %% STEP 1 - findTracks
-iexpe = 2; % 1 / 2 / 3
+iexpe = 4; % 1 / 2 / 3
 
 allresults = struct();
 cd(allExpeStrct(iexpe).analysisFolder)
-file_log_ID = fopen('log_run3.txt', 'a');
+file_log_ID = fopen(sprintf('log_%s.txt',allExpeStrct(iexpe).name), 'a');
  
-for iplane = 1 : 216
+for iplane = 1 : 110
 
     close all
 
@@ -630,21 +647,24 @@ for ix = 1:length(listX)-1
 end
 %%
 %%
-colrP = jet(21);
+colrP = jet(size(allresults,2));
 figure('defaultAxesFontSize',20), box on, hold on
-for iplane = 7 : 21
-    someTrajectories = allresults(iplane).someTrajectories;
-    for itraj3D = 1 : size(someTrajectories,2)
-        plot3([someTrajectories(itraj3D).x3D],...
-            [someTrajectories(itraj3D).y3D],...
-            [someTrajectories(itraj3D).z3D],'.b','markerFaceColor',colrP(iplane,:))
-    end
-end
-view(3)
+view(-36,21)
 xlabel('x')
 ylabel('y')
 zlabel('z')
 axis equal
+zlim([-20 60 ])
+for iplane = 1 : size(allresults,2)
+    someTrajectories = allresults(iplane).someTrajectories;
+    for itraj3D = 1 : size(someTrajectories,2)
+        plot3([someTrajectories(itraj3D).x3D],...
+            [someTrajectories(itraj3D).y3D],...
+            [someTrajectories(itraj3D).z3D],'o','markerFaceColor',colrP(iplane,:),'MarkerEdgeColor',colrP(iplane,:))
+    end
+    pause(2)
+end
+
 
 pause(1)
 %figure('defaultAxesFontSize',20), box on, hold on
@@ -669,7 +689,7 @@ end
 % build data including all planes
 voxData = struct();
 allTrajAllPlanes = struct(); iatap = 0;
-for iplane = 7 : 21
+for iplane = 1 : size(allresults,2)
     someTrajectories = allresults(iplane).someTrajectories;
     for itraj3D = 1 : size(someTrajectories,2)
         iatap =  iatap + 1;
@@ -683,10 +703,14 @@ for iplane = 7 : 21
     end
 end
 
-wVox = 1
+wVox = 2
 listX = -15 : wVox : 15;
 listY = -20 : wVox : 10;
 listZ =   0 : wVox : 20;
+
+listX = -50 : wVox : 50;
+listY = -50 : wVox : 50;
+listZ = -20 : wVox : 65;
 
 for ix = 1:length(listX)-1
     for iy = 1:length(listY)-1
@@ -702,7 +726,7 @@ for ix = 1:length(listX)-1
     end
 end
 % à détailler pour rigueur géométrique
-vStep = 5 % 10
+vStep = 2 % 10
 
 tic
 for itraj3D = 1 : 1 : size(allTrajAllPlanes,2)
@@ -748,6 +772,9 @@ end
 
 
 clear normU U V W X Y Z
+U = zeros(size(voxData),'double');
+V = zeros(size(voxData),'double');
+W = zeros(size(voxData),'double');
 for ix = 1:length(listX)-1
     for iy = 1:length(listY)-1
         for iz = 1:length(listZ)-1
@@ -755,9 +782,12 @@ for ix = 1:length(listX)-1
             Y(ix,iy,iz) = voxData(ix,iy,iz).y;
             Z(ix,iy,iz) = voxData(ix,iy,iz).z;
             if ~isnan(voxData(ix,iy,iz).U)
-            U(ix,iy,iz) = max(-.2,min(.2,voxData(ix,iy,iz).U));
-            V(ix,iy,iz) = max(-.2,min(.2,voxData(ix,iy,iz).V));
-            W(ix,iy,iz) = max(-.2,min(.2,voxData(ix,iy,iz).W));
+            U(ix,iy,iz) = max(-.4,min(.4,voxData(ix,iy,iz).U));
+            V(ix,iy,iz) = max(-.4,min(.4,voxData(ix,iy,iz).V));
+            W(ix,iy,iz) = max(-1,min(1,voxData(ix,iy,iz).W));
+%             U(ix,iy,iz) = voxData(ix,iy,iz).U;
+%             V(ix,iy,iz) = voxData(ix,iy,iz).V;
+%             W(ix,iy,iz) = voxData(ix,iy,iz).W;
             normU(ix,iy,iz) = norm([U(ix,iy,iz),V(ix,iy,iz),W(ix,iy,iz)]);
             end
         end
@@ -772,8 +802,8 @@ xlabel('x')
 ylabel('y')
 zlabel('z')
 view(3)
-ylim([ -19 -18])
-zlim([ 5 20])
+% ylim([ -19 -18])
+% zlim([ 5 20])
 axis equal
 
 % from coordinate xP yP zP and normal uP vP wP define a plane
@@ -789,8 +819,12 @@ wP = 1;
 e10P = 1;
 e01P = 1;
 figure(h3Dquiver)
-plot3(xP,yP,zP,'or')
-h2Dplane = figure('defaultAxesFontSize',20,'position',[1000 100 700 700]);
+zlim([-15 0])
+view(3)
+xlim([-20 20])
+ylim([-15 30])
+% plot3(xP,yP,zP,'or')
+%h2Dplane = figure('defaultAxesFontSize',20,'position',[1000 100 700 700]);
 
 %%
 [Xs,Ys,Zs] = meshgrid(-2:.2:2);
@@ -1845,7 +1879,6 @@ end
 
 fprintf('load image sequence \n')
 inputFolder = allExpeStrct(iexpe).inputFolder;
-cd(inputFolder)
 
 cd(inputFolder)
 listMcin2 = dir('*.mcin2');
@@ -1893,7 +1926,7 @@ for it = 1 : size(M,3)
     %%%%% with pkfnd
     %%%%%
     CC(it).xyRAW = pkfnd(Im01(:,:,it),th,sz);
-    for ixy = 1 : length(CC(it).xyRAW)
+    for ixy = 1 : size(CC(it).xyRAW,1)
         %refine at subpixel precision
         clear xpkfnd ypkfnd Ip
         Ip = zeros(2*Nwidth+1,2*Nwidth+1,'double');
