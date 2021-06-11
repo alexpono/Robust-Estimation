@@ -335,13 +335,11 @@ if exist('hA'), delete(hA), end
 if exist('hB'), delete(hB), end
 if exist('hcA'), delete(hcA), end
 if exist('hAextra'), delete(hAextra), end
-if exist('hcB'), delete(hcB), end
-if exist('hBextra'), delete(hBextra), end
 
 timeShift = 5; % 5; % frames
 
 hitA     = plot(trajArray_CAM1(itA).track(:,1),...
-                trajArray_CAM1(itA).track(:,2),'.','color','b','lineWidth',4);
+                trajArray_CAM1(itA).track(:,2),'color','.b','lineWidth',4);
 hitASMPL = plot(trajArray_CAM1(itA).smplTrack(:,1),...
                 trajArray_CAM1(itA).smplTrack(:,2),'ob');
 % I indicate a trajectory - itA 
@@ -388,19 +386,9 @@ for itB = 1 : length(trajArray_CAM1)
                        ((tminB - tmaxA)/2) * vAsmplX;
             yA_extra = trajArray_CAM1(itA).smplTrack(end,2) + ...
                        ((tminB - tmaxA)/2) * vAsmplY;
-                   hcA = viscircles([xA_extra,yA_extra]  , 2,'Color','b');
-                   hAextra = plot([trajArray_CAM1(itA).smplTrack(end,1),xA_extra],...
-                       [trajArray_CAM1(itA).smplTrack(end,2),yA_extra] , '--b');
-                   
-                   vBsmplX = (trajArray_CAM1(itB).smplTrack(1,1)-trajArray_CAM1(itB).smplTrack(2,1));
-                   vBsmplY = (trajArray_CAM1(itB).smplTrack(1,2)-trajArray_CAM1(itB).smplTrack(2,2));
-                   xB_extra = trajArray_CAM1(itB).smplTrack(1,1) + ...
-                       ((tminB - tmaxA)/2) * vBsmplX;
-                   yB_extra = trajArray_CAM1(itB).smplTrack(1,2) + ...
-                       ((tminB - tmaxA)/2) * vBsmplY;
-                   hcB = viscircles([xB_extra,yB_extra]  , 2,'Color','r');
-                   hBextra = plot([trajArray_CAM1(itB).smplTrack(1,1),xB_extra],...
-                       [trajArray_CAM1(itB).smplTrack(1,2),yB_extra] , '--r');
+            hcA = viscircles([xA_extra,yA_extra]  , 2,'Color','b');
+            hAextra = plot([trajArray_CAM1(itA).smplTrack(end,1),xA_extra],...
+                        [trajArray_CAM1(itA).smplTrack(end,2),yA_extra] , '--b');
         end
     end
 end
