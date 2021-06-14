@@ -88,13 +88,13 @@ allExpeStrct(iexpe).longmin = 8;         % for Benjamin tracks function:
 
 
 %% STEP 1 - findTracks
-iexpe = 5; % 1 / 2 / 3
+iexpe = 4; % 1 / 2 / 3
 
 allresults = struct();
 cd(allExpeStrct(iexpe).analysisFolder)
 file_log_ID = fopen(sprintf('log_%s.txt',allExpeStrct(iexpe).name), 'a');
  
-for iplane = 1 : 100
+for iplane = 1 : 110
 
     close all
 
