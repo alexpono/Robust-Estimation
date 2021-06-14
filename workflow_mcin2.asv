@@ -88,13 +88,13 @@ allExpeStrct(iexpe).longmin = 8;         % for Benjamin tracks function:
 
 
 %% STEP 1 - findTracks
-iexpe = 4; % 1 / 2 / 3
+iexpe = 5; % 1 / 2 / 3
 
 allresults = struct();
 cd(allExpeStrct(iexpe).analysisFolder)
 file_log_ID = fopen(sprintf('log_%s.txt',allExpeStrct(iexpe).name), 'a');
  
-for iplane = 1 : 110
+for iplane = 1 : 100
 
     close all
 
@@ -704,6 +704,9 @@ end
 
 % build data including all planes
 voxData = struct();
+histx3D = [];
+histy3D = [];
+histz3D = [];
 allTrajAllPlanes = struct(); iatap = 0;
 for iplane = 1 : size(allresults,2)
     someTrajectories = allresults(iplane).someTrajectories;
@@ -716,8 +719,16 @@ for iplane = 1 : size(allresults,2)
         allTrajAllPlanes(iatap).z3D = someTrajectories(itraj3D).z3D;
         allTrajAllPlanes(iatap).D = someTrajectories(itraj3D).D;
         allTrajAllPlanes(iatap).iplane = iplane;
+        histx3D = [histx3D,[allTrajAllPlanes(iatap).x3D]];
+        histy3D = [histy3D,[allTrajAllPlanes(iatap).y3D]];
+        histz3D = [histz3D,[allTrajAllPlanes(iatap).z3D]];
     end
 end
+figure, histogram(histx3D), title('distribution along x')
+figure, histogram(histx3D), title('distribution along y')
+figure, histogram(histx3D), title('distribution along z')
+
+%%
 
 wVox = 2
 listX = -15 : wVox : 15;

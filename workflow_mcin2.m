@@ -367,7 +367,7 @@ end
 maxdist = 3;
 longmin = 5;
 [trajArray_CAM1,tracks_CAM1]          = TAN_track2d(part_cam1,maxdist,longmin);
-[trajArray_CAM2RAW,tracks_CAM2RAW] = TAN_track2d(part_cam2RAW,maxdist,longmin);
+[trajArray_CAM2RAW,tracks_CAM2RAW]    = TAN_track2d(part_cam2RAW,maxdist,longmin);
 
 [trajArray_CAM2,tracks_CAM2]=TAN_track2d(part_cam2,maxdist,longmin);
 
@@ -518,7 +518,7 @@ for iselTraj = 1 : size(listMatchedTracks,2)
             x_pxC2 = x02(ixy);
             y_pxC2 = y02(ixy);
             
-            [crossP,D] = crossRaysonFire(CalibFileCam2,CalibFileCam1,x_pxC1,y_pxC1,x_pxC2,y_pxC2,Ttype);
+            [crossP,D] = crossRaysonFire(CalibFileCam1,CalibFileCam2,x_pxC1,y_pxC1,x_pxC2,y_pxC2,Ttype);
             if length(crossP)>0
                 someTrajectories(iselTraj).x3D(ixy) = crossP(1);
                 someTrajectories(iselTraj).y3D(ixy) = crossP(2);
@@ -704,6 +704,9 @@ end
 
 % build data including all planes
 voxData = struct();
+histx3D = [];
+histy3D = [];
+histz3D = [];
 allTrajAllPlanes = struct(); iatap = 0;
 for iplane = 1 : size(allresults,2)
     someTrajectories = allresults(iplane).someTrajectories;
@@ -716,17 +719,25 @@ for iplane = 1 : size(allresults,2)
         allTrajAllPlanes(iatap).z3D = someTrajectories(itraj3D).z3D;
         allTrajAllPlanes(iatap).D = someTrajectories(itraj3D).D;
         allTrajAllPlanes(iatap).iplane = iplane;
+        histx3D = [histx3D,[allTrajAllPlanes(iatap).x3D]];
+        histy3D = [histy3D,[allTrajAllPlanes(iatap).y3D]];
+        histz3D = [histz3D,[allTrajAllPlanes(iatap).z3D]];
     end
 end
+figure, histogram(histx3D), title('distribution along x')
+figure, histogram(histy3D), title('distribution along y')
+figure, histogram(histz3D), title('distribution along z')
+
+%%
 
 wVox = 2
-listX = -15 : wVox : 15;
-listY = -20 : wVox : 10;
-listZ =   0 : wVox : 20;
-
-listX = -50 : wVox : 50;
-listY = -50 : wVox : 50;
-listZ = -20 : wVox : 65;
+listX = -25 : wVox : 40;
+listY = -25 : wVox : 25;
+listZ =   6 : wVox : 22;
+% 
+% listX = -50 : wVox : 50;
+% listY = -50 : wVox : 50;
+% listZ = -20 : wVox : 65;
 
 for ix = 1:length(listX)-1
     for iy = 1:length(listY)-1
@@ -822,7 +833,7 @@ view(3)
 % zlim([ 5 20])
 axis equal
 
-% from coordinate xP yP zP and normal uP vP wP define a plane
+%% from coordinate xP yP zP and normal uP vP wP define a plane
 % then show values of vBox in this plane 
 
 xP =  0;
