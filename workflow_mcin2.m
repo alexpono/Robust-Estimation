@@ -731,9 +731,9 @@ figure, histogram(histz3D), title('distribution along z')
 %%
 
 wVox = 2
-listX = -25 : wVox : 40;
+listX = -25 : wVox : 35;
 listY = -25 : wVox : 25;
-listZ =   6 : wVox : 22;
+listZ =   15 : wVox : 30;
 % 
 % listX = -50 : wVox : 50;
 % listY = -50 : wVox : 50;
