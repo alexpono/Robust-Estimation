@@ -360,7 +360,7 @@ Xtck = NaN(length(trajArray_CAM1),max(tckSize));
 Ytck = NaN(length(trajArray_CAM1),max(tckSize));
 
 hold on, 
-for ip = 1 : length(CCall)
+for ip = 1 : length(CCall) % faire plutôt une boucle sur le temps !!!!
     plot(CCall(ip,1),CCall(ip,2),'ok','markerFaceColor',colTraj(CCall(ip,3),:))
 end
 
