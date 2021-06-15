@@ -377,173 +377,234 @@ figure('defaultAxesFontSize',20), box on, hold on
 htrck = plot(Xtck',Ytck','-','Color',0.5*[1 1 1],'lineWidth',4);
 
 %%
+% trajArray_CAM1_BACKUP = trajArray_CAM1;
+trajArray_CAM1 = trajArray_CAM1_BACKUP;
+%%
 lcrossStitchTHRSHLD = 4;
 
-itA = 98%149;
-if exist('hh'),     delete(hh),     end
-if exist('hitA'),   delete(hitA),   end
-if exist('hhSMPL'), delete(hhSMPL), end
-if exist('hitASMPL'), delete(hitASMPL), end
-if exist('hA'), delete(hA), end
-if exist('hB'), delete(hB), end
-if exist('hcA'), delete(hcA), end
-if exist('hAextra'), delete(hAextra), end
-if exist('hcB'), delete(hcB), end
-if exist('hBextra'), delete(hBextra), end
-
-timeShift = 5; % 5; % frames
-
-hitA     = plot(trajArray_CAM1(itA).track(:,1),...
-                trajArray_CAM1(itA).track(:,2),'.','color','b','lineWidth',4);
-hitASMPL = plot(trajArray_CAM1(itA).smplTrack(:,1),...
-                trajArray_CAM1(itA).smplTrack(:,2),'ob');
-% I indicate a trajectory - itA 
-% it selects all trajectories that end timeShift before the start of my
-% choosen trajectory
-% tminA = min(trajArray_CAM1(itA).track(:,3));
-% itBcandidates = [];
-% for itB = 1 : length(trajArray_CAM1)
-%     tmaxB = max(trajArray_CAM1(itB).track(:,3));
-%     if (tminA - tmaxB) < timeShift && (tminA - tmaxB) >0
-%         itBcandidates = [itBcandidates,itB];
-%         fprintf('itB: %0.0f,tminA: %0.0f,tmaxB: %0.0f \n',itB,tminA,tmaxB)
-%         hh(itB) = plot(trajArray_CAM1(itB).track(:,1),trajArray_CAM1(itB).track(:,2),'color','r','lineWidth',4);
-%     end
-% end
-
-rA = 20;
-tmaxA = max(trajArray_CAM1(itA).track(:,3));
-itBcandidates = [];
-dABall = [];
-dCrossingCandidates = [];
-for itB = 1 : length(trajArray_CAM1)
-    tminB = min(trajArray_CAM1(itB).track(:,3));
-    if (tminB - tmaxA) < timeShift && (tminB - tmaxA) > 0
-        clear xA yA xB yB dAB
+itList = [1 : size(trajArray_CAM1(itA).track  ,1)];
+continue2stich = 'on'
+conversionsSTR = struct();
+icSTR = 0;
+while strcmp(continue2stich,'on') % as long as we can stitch we continue to stitch
+    itA = 0;
+    conversions = 0 ;
+    while(1)% trouver une trach qui peut stitcher
+        itA = itA+1;
+        if itA > size(trajArray_CAM1,2)
+        fprintf('stitched %0.0f trajectories \n',conversions)
+            if conversions == 0
+                continue2stich = 'off'
+            end
+            break
+        end
+    %pause(.1)
+    %itA = 98%149;
+    if exist('hh'),     delete(hh),     end
+    if exist('hitA'),   delete(hitA),   end
+    if exist('hhSMPL'), delete(hhSMPL), end
+    if exist('hitASMPL'), delete(hitASMPL), end
+    if exist('hA'), delete(hA), end
+    if exist('hB'), delete(hB), end
+    if exist('hcA'), delete(hcA), end
+    if exist('hAextra'), delete(hAextra), end
+    if exist('hcB'), delete(hcB), end
+    if exist('hBextra'), delete(hBextra), end
+    
+    timeShift = 5; % 5; % frames
+    
+    hitA     = plot(trajArray_CAM1(itA).track(:,1),...
+        trajArray_CAM1(itA).track(:,2),'.','color','b','lineWidth',4);
+    hitASMPL = plot(trajArray_CAM1(itA).smplTrack(:,1),...
+        trajArray_CAM1(itA).smplTrack(:,2),'ob');
+    % I indicate a trajectory - itA
+    % it selects all trajectories that end timeShift before the start of my
+    % choosen trajectory
+    % tminA = min(trajArray_CAM1(itA).track(:,3));
+    % itBcandidates = [];
+    % for itB = 1 : length(trajArray_CAM1)
+    %     tmaxB = max(trajArray_CAM1(itB).track(:,3));
+    %     if (tminA - tmaxB) < timeShift && (tminA - tmaxB) >0
+    %         itBcandidates = [itBcandidates,itB];
+    %         fprintf('itB: %0.0f,tminA: %0.0f,tmaxB: %0.0f \n',itB,tminA,tmaxB)
+    %         hh(itB) = plot(trajArray_CAM1(itB).track(:,1),trajArray_CAM1(itB).track(:,2),'color','r','lineWidth',4);
+    %     end
+    % end
+    
+    rA = 20;
+    tmaxA = max(trajArray_CAM1(itA).track(:,3));
+    itBcandidates = [];
+    dABall = [];
+    dCrossingCandidates = [];
+    for itB = 1 : length(trajArray_CAM1)
+        tminB = min(trajArray_CAM1(itB).track(:,3));
+        if (tminB - tmaxA) < timeShift && (tminB - tmaxA) > 0
+            clear xA yA xB yB dAB
+            xA = trajArray_CAM1(itA).track(end,1);
+            yA = trajArray_CAM1(itA).track(end,2);
+            xB = trajArray_CAM1(itB).track(1,1);
+            yB = trajArray_CAM1(itB).track(1,2);
+            dAB = sqrt((xA-xB)^2+(yA-yB)^2);
+            if dAB < rA
+                dABall = [dABall,dAB];
+                itBcandidates = [itBcandidates,itB];
+                fprintf('itA: %0.0f,  itB: %0.0f, dAB: %0.0f,tmaxA: %0.0f,tminB: %0.0f \n',itA,itB,dAB,tmaxA,tminB)
+                hh(itB) = plot(trajArray_CAM1(itB).track(:,1),...
+                    trajArray_CAM1(itB).track(:,2),'>r','color','r','lineWidth',4);
+                hhSMPL(itB) = plot(trajArray_CAM1(itB).smplTrack(:,1),...
+                    trajArray_CAM1(itB).smplTrack(:,2),'or');
+                hA = plot(xA,yA,'>k');
+                hB = plot(xB,yB,'sk');
+                % extrapolate the position of traj A and B and show where the tracer would be
+                tA2B = (tmaxA+tminB)/2;
+                Dt = (trajArray_CAM1(itA).smplTrack(end,3)-trajArray_CAM1(itA).smplTrack(end-1,3));
+                Dx = (trajArray_CAM1(itA).smplTrack(end,1)-trajArray_CAM1(itA).smplTrack(end-1,1));
+                Dy = (trajArray_CAM1(itA).smplTrack(end,2)-trajArray_CAM1(itA).smplTrack(end-1,2));
+                vAsmplX = Dx / Dt;
+                vAsmplY = Dy / Dt;
+                xA_extra = trajArray_CAM1(itA).smplTrack(end,1) + ...
+                    (tA2B - trajArray_CAM1(itA).smplTrack(end,3)) * vAsmplX;
+                yA_extra = trajArray_CAM1(itA).smplTrack(end,2) + ...
+                    (tA2B - trajArray_CAM1(itA).smplTrack(end,3)) * vAsmplY;
+                hcA = viscircles([xA_extra,yA_extra]  , 2,'Color','b');
+                hAextra = plot([trajArray_CAM1(itA).smplTrack(end,1),xA_extra],...
+                    [trajArray_CAM1(itA).smplTrack(end,2),yA_extra] , '--b');
+                
+                Dt = (trajArray_CAM1(itB).smplTrack(2,3)-trajArray_CAM1(itB).smplTrack(1,3));
+                Dx = (trajArray_CAM1(itB).smplTrack(1,1)-trajArray_CAM1(itB).smplTrack(2,1));
+                Dy = (trajArray_CAM1(itB).smplTrack(1,2)-trajArray_CAM1(itB).smplTrack(2,2));
+                
+                vBsmplX = Dx/Dt;
+                vBsmplY = Dy/Dt;
+                xB_extra = trajArray_CAM1(itB).smplTrack(1,1) + ...
+                    (- tA2B + trajArray_CAM1(itB).smplTrack(1,3)) * vBsmplX;
+                yB_extra = trajArray_CAM1(itB).smplTrack(1,2) + ...
+                    (- tA2B + trajArray_CAM1(itB).smplTrack(1,3)) * vBsmplY;
+                hcB = viscircles([xB_extra,yB_extra]  , 2,'Color','r');
+                hBextra = plot([trajArray_CAM1(itB).smplTrack(1,1),xB_extra],...
+                    [trajArray_CAM1(itB).smplTrack(1,2),yB_extra] , '--r');
+                
+                dCrossingCandidates = [dCrossingCandidates,sqrt((xB_extra-xA_extra)^2+(yB_extra-yA_extra)^2)];
+            end
+        end
+    end
+    
+    
+    % stitch the best candidate if it is possible
+    [mindist,itBstitch] = min(dCrossingCandidates);
+    if mindist < lcrossStitchTHRSHLD        
+        itB = itBcandidates(itBstitch);
+        
+        conversions = conversions + 1;
+        
+        icSTR = icSTR + 1;
+        conversionsSTR(icSTR).mindist = mindist;
+        conversionsSTR(icSTR).tmaxA = tmaxA; 
+        conversionsSTR(icSTR).tminB = trajArray_CAM1(itB).track(1,3); 
+        conversionsSTR(icSTR).itA = itA;
+        conversionsSTR(icSTR).itB = trajArray_CAM1(itB).track(1,3); 
+        conversionsSTR(icSTR).Ax = trajArray_CAM1(itA).track(:,1);
+        conversionsSTR(icSTR).Ay = trajArray_CAM1(itA).track(:,2);
+        conversionsSTR(icSTR).At = trajArray_CAM1(itA).track(:,3);
+        conversionsSTR(icSTR).Bx = trajArray_CAM1(itB).track(:,1);
+        conversionsSTR(icSTR).By = trajArray_CAM1(itB).track(:,2);
+        conversionsSTR(icSTR).Bt = trajArray_CAM1(itB).track(:,3);
         xA = trajArray_CAM1(itA).track(end,1);
         yA = trajArray_CAM1(itA).track(end,2);
         xB = trajArray_CAM1(itB).track(1,1);
         yB = trajArray_CAM1(itB).track(1,2);
         dAB = sqrt((xA-xB)^2+(yA-yB)^2);
-        if dAB < rA
-            dABall = [dABall,dAB];
-            itBcandidates = [itBcandidates,itB];
-            fprintf('dAB: %0.0f, itB: %0.0f,tmaxA: %0.0f,tminB: %0.0f \n',dAB,itB,tmaxA,tminB)
-            hh(itB) = plot(trajArray_CAM1(itB).track(:,1),...
-                trajArray_CAM1(itB).track(:,2),'>r','color','r','lineWidth',4);
-            hhSMPL(itB) = plot(trajArray_CAM1(itB).smplTrack(:,1),...
-                trajArray_CAM1(itB).smplTrack(:,2),'or');
-            hA = plot(xA,yA,'>k');
-            hB = plot(xB,yB,'sk');
-            % extrapolate the position of traj A and B and show where the tracer would be
-            tA2B = (tmaxA+tminB)/2;
-            Dt = (trajArray_CAM1(itA).smplTrack(end,3)-trajArray_CAM1(itA).smplTrack(end-1,3));
-            Dx = (trajArray_CAM1(itA).smplTrack(end,1)-trajArray_CAM1(itA).smplTrack(end-1,1));
-            Dy = (trajArray_CAM1(itA).smplTrack(end,2)-trajArray_CAM1(itA).smplTrack(end-1,2));
-            vAsmplX = Dx / Dt;
-            vAsmplY = Dy / Dt;
-            xA_extra = trajArray_CAM1(itA).smplTrack(end,1) + ...
-                (tA2B - trajArray_CAM1(itA).smplTrack(end,3)) * vAsmplX;
-            yA_extra = trajArray_CAM1(itA).smplTrack(end,2) + ...
-                (tA2B - trajArray_CAM1(itA).smplTrack(end,3)) * vAsmplY;
-            hcA = viscircles([xA_extra,yA_extra]  , 2,'Color','b');
-            hAextra = plot([trajArray_CAM1(itA).smplTrack(end,1),xA_extra],...
-                [trajArray_CAM1(itA).smplTrack(end,2),yA_extra] , '--b');
-            
-            Dt = (trajArray_CAM1(itB).smplTrack(2,3)-trajArray_CAM1(itB).smplTrack(1,3));
-            Dx = (trajArray_CAM1(itB).smplTrack(1,1)-trajArray_CAM1(itB).smplTrack(2,1));
-            Dy = (trajArray_CAM1(itB).smplTrack(1,2)-trajArray_CAM1(itB).smplTrack(2,2));
-            
-            vBsmplX = Dx/Dt;
-            vBsmplY = Dy/Dt;
-            xB_extra = trajArray_CAM1(itB).smplTrack(1,1) + ...
-                (- tA2B + trajArray_CAM1(itB).smplTrack(1,3)) * vBsmplX;
-            yB_extra = trajArray_CAM1(itB).smplTrack(1,2) + ...
-                (- tA2B + trajArray_CAM1(itB).smplTrack(1,3)) * vBsmplY;
-            hcB = viscircles([xB_extra,yB_extra]  , 2,'Color','r');
-            hBextra = plot([trajArray_CAM1(itB).smplTrack(1,1),xB_extra],...
-                [trajArray_CAM1(itB).smplTrack(1,2),yB_extra] , '--r');
-            
-            dCrossingCandidates = [dCrossingCandidates,sqrt((xB_extra-xA_extra)^2+(yB_extra-yA_extra)^2)];
+        conversionsSTR(icSTR).dAB = dAB;
+        conversionsSTR(icSTR).xA_extra = xA_extra;
+        conversionsSTR(icSTR).yA_extra = yA_extra;
+        conversionsSTR(icSTR).xB_extra = xB_extra;
+        conversionsSTR(icSTR).yB_extra = yB_extra;
+        
+        % attach B to A
+        xA_f = trajArray_CAM1(itA).track(end,1);
+        yA_f = trajArray_CAM1(itA).track(end,2);
+        xB_i = trajArray_CAM1(itB).track(1,1);
+        yB_i = trajArray_CAM1(itB).track(1,2);
+        tA_f = trajArray_CAM1(itA).track(end,3);
+        tB_i = trajArray_CAM1(itB).track(1,3);
+        for it = tA_f+1 : tB_i-1
+            trajArray_CAM1(itA).track(end+1,1) =  xA_f + (xB_i - xA_f) * ((it-tA_f)/(tB_i-tA_f)) ;
+            trajArray_CAM1(itA).track(end,2)   =  yA_f + (yB_i - yA_f) * ((it-tA_f)/(tB_i-tA_f)) ;
+            trajArray_CAM1(itA).track(end,3)   =  it;
+            trajArray_CAM1(itA).track(end,4)   =  0;
         end
+        LitA = size(trajArray_CAM1(itA).track  ,1);
+        for it = 1 : size(trajArray_CAM1(itB).track  ,1)
+            trajArray_CAM1(itA).track(LitA+it,1) =  trajArray_CAM1(itB).track(it,1);
+            trajArray_CAM1(itA).track(LitA+it,2) =  trajArray_CAM1(itB).track(it,2);
+            trajArray_CAM1(itA).track(LitA+it,3) =  trajArray_CAM1(itB).track(it,3);
+            trajArray_CAM1(itA).track(LitA+it,4) =  trajArray_CAM1(itB).track(it,4);
+        end
+        
+        % kill B
+        trajArray_CAM1(itB) = [];
+        
+        % recalculate smplTrack
+        trajArray_CAM1(itA).smplTrack  = [];
+        itraj = itA;
+        iti = 1+itStep/2;
+        itf = size(trajArray_CAM1(itraj).track,1)-itStep/2;
+        timeSubSample_i = iti :  itStep : round(itf/2);
+        timeSubSample_f = itf : -itStep : round(itf/2);
+        if timeSubSample_i(end) == timeSubSample_f(end)
+            timeSubSample_f(end) = [];
+            timeSubSample = [timeSubSample_i,flip(timeSubSample_f)];
+        elseif (timeSubSample_f(end)-timeSubSample_i(end)) > 5
+            timeSubSample_i = [timeSubSample_i,round((timeSubSample_i(end)+timeSubSample_f(end))/2)];
+            timeSubSample = [timeSubSample_i,flip(timeSubSample_f)];
+        else
+            timeSubSample = [timeSubSample_i,flip(timeSubSample_f)];
+        end
+        
+        iit = 0;
+        for iittime = 1 : length(timeSubSample) % 1 : 5 : size(trajArray_CAM1(itraj).track,1)
+            iit = iit + 1;
+            ittime = timeSubSample(iittime);
+            tmean_i = ittime-itStep/2;
+            tmean_f = ittime+itStep/2;
+            trajArray_CAM1(itraj).smplTrack(iit,1) = ...
+                mean( trajArray_CAM1(itraj).track(tmean_i:tmean_f,1));
+            trajArray_CAM1(itraj).smplTrack(iit,2) = ...
+                mean( trajArray_CAM1(itraj).track(tmean_i:tmean_f,2));
+            trajArray_CAM1(itraj).smplTrack(iit,3) = trajArray_CAM1(itraj).track(ittime,3);
+            trajArray_CAM1(itraj).smplTrack(iit,4) = trajArray_CAM1(itraj).track(ittime,4);
+            trajArray_CAM1(itraj).smplTrack(iit,5) = trajArray_CAM1(itraj).track(ittime,5);
+        end
+        
+        for ittime = 2 : size(trajArray_CAM1(itraj).smplTrack,1)
+            xi = trajArray_CAM1(itraj).smplTrack(ittime-1,1);
+            yi = trajArray_CAM1(itraj).smplTrack(ittime-1,2);
+            xf = trajArray_CAM1(itraj).smplTrack(ittime,1);
+            yf = trajArray_CAM1(itraj).smplTrack(ittime,2);
+            trajArray_CAM1(itraj).smplTrack(ittime,6) = sqrt((xf-xi)^2+(yf-yi)^2);
+        end
+        
+        trajArray_CAM1(itraj).dsSUM    = sum([trajArray_CAM1(itraj).track(:,6)]);
+        trajArray_CAM1(itraj).dsSUMwindow = sum([trajArray_CAM1(itraj).smplTrack(:,6)]);
+    end
+    
     end
 end
-
-%% stitch the best candidate if it is possible
-[mindist,itBstitch] = min(dCrossingCandidates);
-if mindist < lcrossStitchTHRSHLD
-    itB = itBcandidates(itBstitch);
-    % attach B to A
-    trajArray_CAM1(itA).track  ;
-    trajArray_CAM1(itA).smplTrack  = [];
-    xA_f = trajArray_CAM1(itA).track(end,1);
-    yA_f = trajArray_CAM1(itA).track(end,2);
-    xB_i = trajArray_CAM1(itB).track(1,1);
-    yB_i = trajArray_CAM1(itB).track(1,2);
-    tA_f = trajArray_CAM1(itA).track(end,3);
-    tB_i = trajArray_CAM1(itB).track(1,3);
-    for it = tA_f+1 : tB_i-1
-        trajArray_CAM1(itA).track(end+1,1) =  (xA_f - xB_i) * ((it-tA_f)/(tB_i-tA_f)) ;
-        trajArray_CAM1(itA).track(end,2) =  (yA_f - yB_i) * ((it-tA_f)/(tB_i-tA_f)) ;
-        trajArray_CAM1(itA).track(end,3) =  it ;
-        trajArray_CAM1(itA).track(end,4) = 0 ;
-    end
-    % kill B
-    
-    % recalculate smplTrack
-    iti = 1+itStep/2;
-    itf = size(trajArray_CAM1(itraj).track,1)-itStep/2;
-    timeSubSample_i = iti :  itStep : round(itf/2);
-    timeSubSample_f = itf : -itStep : round(itf/2);
-    if timeSubSample_i(end) == timeSubSample_f(end)
-        timeSubSample_f(end) = [];
-        timeSubSample = [timeSubSample_i,flip(timeSubSample_f)];
-    elseif (timeSubSample_f(end)-timeSubSample_i(end)) > 5
-        timeSubSample_i = [timeSubSample_i,round((timeSubSample_i(end)+timeSubSample_f(end))/2)];
-        timeSubSample = [timeSubSample_i,flip(timeSubSample_f)];
-    else
-        timeSubSample = [timeSubSample_i,flip(timeSubSample_f)];
-    end
-    
-    for iittime = 1 : length(timeSubSample) % 1 : 5 : size(trajArray_CAM1(itraj).track,1)
-        iit = iit + 1;
-        ittime = timeSubSample(iittime);
-        tmean_i = ittime-itStep/2;
-        tmean_f = ittime+itStep/2;
-%         if ittime == 1
-%         tmean_i = ittime;
-%         tmean_f = ittime+3;
-%         elseif ittime == timeSubSample(end)
-%         tmean_i = ittime-3;
-%         tmean_f = ittime;
-%         else
-%         tmean_i = ittime;
-%         tmean_f = min(ittime+5,timeSubSample(end));
-%         end
-        trajArray_CAM1(itraj).smplTrack(iit,1) = ...
-            mean( trajArray_CAM1(itraj).track(tmean_i:tmean_f,1));
-        trajArray_CAM1(itraj).smplTrack(iit,2) = ...
-            mean( trajArray_CAM1(itraj).track(tmean_i:tmean_f,2)); 
-        trajArray_CAM1(itraj).smplTrack(iit,3) = trajArray_CAM1(itraj).track(ittime,3); 
-        trajArray_CAM1(itraj).smplTrack(iit,4) = trajArray_CAM1(itraj).track(ittime,4); 
-        trajArray_CAM1(itraj).smplTrack(iit,5) = trajArray_CAM1(itraj).track(ittime,5); 
-    end
-    
-    for ittime = 2 : size(trajArray_CAM1(itraj).smplTrack,1)
-        xi = trajArray_CAM1(itraj).smplTrack(ittime-1,1);
-        yi = trajArray_CAM1(itraj).smplTrack(ittime-1,2);
-        xf = trajArray_CAM1(itraj).smplTrack(ittime,1);
-        yf = trajArray_CAM1(itraj).smplTrack(ittime,2);
-        trajArray_CAM1(itraj).smplTrack(ittime,6) = sqrt((xf-xi)^2+(yf-yi)^2);
-    end
-    
-    trajArray_CAM1(itraj).dsSUM    = sum([trajArray_CAM1(itraj).track(:,6)]);
-    trajArray_CAM1(itraj).dsSUMwindow = sum([trajArray_CAM1(itraj).smplTrack(:,6)]);
-end
-%axis([xA-5 xA+5 yA-5 yA+5])
+%% showing each stitched trajectory
+istr = 1;
+figure('defaultAxesFontSize',20), hold on, box on
+plot(conversionsSTR(icSTR).Ax,conversionsSTR(icSTR).Ay,'ob')
+plot(conversionsSTR(icSTR).Bx,conversionsSTR(icSTR).By,'or')
+title(sprintf('min dist: %0.0f'))
 %%
 figure('defaultAxesFontSize',20,'position',[1062 452 837  529]), box on
-histogram([trajArray_CAM1.dsSUMwindow])
+h01 = histogram([trajArray_CAM1_BACKUP.dsSUMwindow],'Normalization','probability',...
+    'faceAlpha',0.3,'facecolor','r');
+hold on
+pause(1)
+h02 = histogram([trajArray_CAM1.dsSUMwindow],'Normalization','probability',...
+    'faceAlpha',0.3,'facecolor','b');
+legend('before','current')
 %%
 
 trajAx = smoothdata(trajArray_CAM1(itA).track(:,1),'gaussian',20);
