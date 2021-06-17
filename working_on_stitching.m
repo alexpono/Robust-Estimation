@@ -201,6 +201,19 @@ end
 % column 4: n° trajectory
 % column 5: state of particle: 0: free 1: not free  2: linked to two or
 % more other particles
+
+
+% After having found the particles, we mark in part_cam1 wich particles
+% have been found or not, in column 4
+for it = 1 : size(trajArray_CAM1,2)
+    for ip = 1 :  size(trajArray_CAM1(it).track , 1 )
+        Xt = trajArray_CAM1(it).track(ip,1);
+        Yt = trajArray_CAM1(it).track(ip,2);
+        d = sqrt((CCall(:,1)-Xt).^2+(CCall(:,2)-Yt).^2);
+        [~,b] = min(d);
+        CCall(b,4) = 1;
+    end
+end
 %%
 %%%% %%%% %%%%
 %%%% %%%% %%%% calculate ds
@@ -359,11 +372,6 @@ end
 Xtck = NaN(length(trajArray_CAM1),max(tckSize));
 Ytck = NaN(length(trajArray_CAM1),max(tckSize));
 
-hold on, 
-for ip = 1 : length(CCall) % faire plutôt une boucle sur le temps !!!!
-    plot(CCall(ip,1),CCall(ip,2),'ok','markerFaceColor',colTraj(CCall(ip,3),:))
-end
-
 for it = 1 : length(trajArray_CAM1)
     Xtck(it,1:length(trajArray_CAM1(it).track(:,1))) = ...
         trajArray_CAM1(it).track(:,1);
@@ -373,11 +381,34 @@ for it = 1 : length(trajArray_CAM1)
     plot(Xtck(it,:),Ytck(it,:),'-','lineWidth',4,'color',colT)
 end
 
+it = 50;
+listCC = find(CCall(:,3) == it);
+hold on, 
+
+for it = 1 : 1 : max(CCall(:,3))
+    clear listCC
+    listCC = find(CCall(:,3) == it);
+    CCX = CCall(listCC,1); 
+    CCY = CCall(listCC,2);
+    plot(CCX,CCY,'ok','markerFaceColor',colTraj(CCall(listCC(1),3),:))
+end
+
+
+
 
 %htrck = plot(Xtck',Ytck','-','lineWidth',4);
 set(gca,'ydir','reverse')
+%%
+while(1)
+    clear x y 
+    [x,y] = ginput(1); 
+    % find the particule in CCall
+    d = sqrt((CCall(:,1)-x).^2+(CCall(:,2)-y).^2);
+    [~,b] = min(d);
+    fprintf('X: %4.0d, Y: %4.0d, t: %4.0d  \n',CCall(b,1) ,CCall(b,2) ,CCall(b,3))
+end
 
-   
+
 %% I indicate a point, it finds the trajectory
 pX = 92.0974; pY =  959.297;
 pX = 95.3814; pY =  954.207;
@@ -411,7 +442,7 @@ htrck = plot(Xtck',Ytck','-','Color',0.5*[1 1 1],'lineWidth',4);
 %%
 % trajArray_CAM1_BACKUP = trajArray_CAM1;
 trajArray_CAM1 = trajArray_CAM1_BACKUP;
-%%
+%% STITCHING 
 lcrossStitchTHRSHLD = 4;
 
 itList = [1 : size(trajArray_CAM1(itA).track  ,1)];
@@ -435,7 +466,8 @@ while strcmp(continue2stich,'on') % as long as we can stitch we continue to stit
     if exist('hh'),     delete(hh),     end
     if exist('hitA'),   delete(hitA),   end
     if exist('hhSMPL'), delete(hhSMPL), end
-    if exist('hitASMPL'), delete(hitASMPL), end
+    if exist('h
+        itASMPL'), delete(hitASMPL), end
     if exist('hA'), delete(hA), end
     if exist('hB'), delete(hB), end
     if exist('hcA'), delete(hcA), end
