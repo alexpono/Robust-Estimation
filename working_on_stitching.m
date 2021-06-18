@@ -48,6 +48,27 @@ allExpeStrct(iexpe).maxdist = 3;          % for Benjamin tracks function:
 allExpeStrct(iexpe).longmin = 8;         % for Benjamin tracks function:
 % minimum number of points of a trajectory
 
+
+
+iexpe = 6;
+
+allExpeStrct(iexpe).type        = 'experiment'; % experiment / calibration
+allExpeStrct(iexpe).name        = 'expe_2021_06_17_run02';
+allExpeStrct(iexpe).inputFolder = ...
+    strcat('E:\manipIFPEN\expe_2021_06_17_onePlane\run02\');
+allExpeStrct(iexpe).analysisFolder = ...
+    strcat('D:\IFPEN\analysisExperiments\analysis_expe_2021_06_17\run02\');
+allExpeStrct(iexpe).CalibFile = ...
+    strcat('E:\manipIFPEN\expe_2021_06_09_calibration\calibrationImages\calib.mat');
+allExpeStrct(iexpe).centerFinding_th = 5; % automatiser la définition de ces paramètres?
+allExpeStrct(iexpe).centerFinding_sz = 2; % automatiser la définition de ces paramètres?
+allExpeStrct(iexpe).maxdist = 3;          % for Benjamin tracks function:
+% max distances between particules from frame to frame
+allExpeStrct(iexpe).longmin = 8;         % for Benjamin tracks function:
+% minimum number of points of a trajectory
+
+
+
 allresults = struct();
 
 
@@ -202,7 +223,7 @@ end
 % column 5: state of particle: 0: free 1: not free  2: linked to two or
 % more other particles
 
-
+fprintf('marking CCall\n')
 % After having found the particles, we mark in part_cam1 wich particles
 % have been found or not, in column 4
 for it = 1 : size(trajArray_CAM1,2)
@@ -466,8 +487,7 @@ while strcmp(continue2stich,'on') % as long as we can stitch we continue to stit
     if exist('hh'),     delete(hh),     end
     if exist('hitA'),   delete(hitA),   end
     if exist('hhSMPL'), delete(hhSMPL), end
-    if exist('h
-        itASMPL'), delete(hitASMPL), end
+    if exist('hitASMPL'), delete(hitASMPL), end
     if exist('hA'), delete(hA), end
     if exist('hB'), delete(hB), end
     if exist('hcA'), delete(hcA), end

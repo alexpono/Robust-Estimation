@@ -1,88 +1,9 @@
-%% WORKFLOW ..
-
-clear all, close all
-
-% detect the computer and load all_IFPEN_DARCY02_experiments
-name = getenv('COMPUTERNAME');
-if strcmp(name,'DESKTOP-3ONLTD9')
-    cd('C:\Users\Lenovo\Jottacloud\RECHERCHE\Projets\21_IFPEN\git\Robust-Estimation')
-elseif strcmp(name,'DARCY')
-    cd('C:\Users\darcy\Desktop\git\Robust-Estimation')
-end
-load('all_IFPEN_DARCY02_experiments.mat')
+%% Workflow_mcin2PSMN
 
 
 %% STEP 0 - Defining paths using list of experiments stored in sturture allExpeStrct
 fprintf('define folders and experiment name\n')
 
-iexpe = 2;
-
-allExpeStrct(iexpe).type        = 'experiment'; % experiment / calibration
-allExpeStrct(iexpe).name        = 'expe20210505_run3';
-allExpeStrct(iexpe).inputFolder = ...
-    strcat('D:\IFPEN\IFPEN_manips\expe_2021_05_05\run03\');
-allExpeStrct(iexpe).analysisFolder = ...
-    strcat('D:\IFPEN\analysisExperiments\analysis_expe_20210505_run3\');
-allExpeStrct(iexpe).CalibFile = ...
-    strcat('D:\IFPEN\IFPEN_manips\expe_2021_05_06_calibration\reorderCalPlanes4test\calib.mat');
-allExpeStrct(iexpe).centerFinding_th = 2; % automatiser la définition de ces paramètres?
-allExpeStrct(iexpe).centerFinding_sz = 2; % automatiser la définition de ces paramètres?
-allExpeStrct(iexpe).maxdist = 3;          % for Benjamin tracks function:
-% max distances between particules from frame to frame
-allExpeStrct(iexpe).longmin = 10;         % for Benjamin tracks function:
-% minimum number of points of a trajectory
-
-iexpe = 3;
-
-allExpeStrct(iexpe).type        = 'experiment'; % experiment / calibration
-allExpeStrct(iexpe).name        = 'expe20210528_test';
-allExpeStrct(iexpe).inputFolder = ...
-    strcat('D:\IFPEN\IFPEN_manips\expe_2021_05_28_manipTestCrossRays_in_air\');
-allExpeStrct(iexpe).analysisFolder = ...
-    strcat('D:\pono\IFPEN\analysisExperiments\analysis_expe_20210528\');
-allExpeStrct(iexpe).CalibFile = ...
-    strcat('D:\IFPEN\IFPEN_manips\expe_2021_05_28_calibration_in_air\',...
-    'calibrationFile\calib.mat');
-allExpeStrct(iexpe).centerFinding_th = 2; % automatiser la définition de ces paramètres?
-allExpeStrct(iexpe).centerFinding_sz = 2; % automatiser la définition de ces paramètres?
-allExpeStrct(iexpe).maxdist = 3;          % for Benjamin tracks function:
-% max distances between particules from frame to frame
-allExpeStrct(iexpe).longmin = 10;         % for Benjamin tracks function:
-% minimum number of points of a trajectory
-
-iexpe = 4;
-
-allExpeStrct(iexpe).type        = 'experiment'; % experiment / calibration
-allExpeStrct(iexpe).name        = 'expe20210609_run05_200fps';
-allExpeStrct(iexpe).inputFolder = ...
-    strcat('E:\manipIFPEN\expe_2021_06_09\run05_200fps\');
-allExpeStrct(iexpe).analysisFolder = ...
-    strcat('D:\IFPEN\analysisExperiments\analysis_expe_2021_06_09\run05_200fps\');
-allExpeStrct(iexpe).CalibFile = ...
-    strcat('E:\manipIFPEN\expe_2021_06_09_calibration\calibrationImages\calib.mat');
-allExpeStrct(iexpe).centerFinding_th = 5; % automatiser la définition de ces paramètres?
-allExpeStrct(iexpe).centerFinding_sz = 2; % automatiser la définition de ces paramètres?
-allExpeStrct(iexpe).maxdist = 3;          % for Benjamin tracks function:
-% max distances between particules from frame to frame
-allExpeStrct(iexpe).longmin = 8;         % for Benjamin tracks function:
-% minimum number of points of a trajectory
-
-iexpe = 5;
-
-allExpeStrct(iexpe).type        = 'experiment'; % experiment / calibration
-allExpeStrct(iexpe).name        = 'expe_2021_06_14_run05_statistics';
-allExpeStrct(iexpe).inputFolder = ...
-    strcat('E:\manipIFPEN\expe_2021_06_14\run05_statistics\');
-allExpeStrct(iexpe).analysisFolder = ...
-    strcat('D:\IFPEN\analysisExperiments\analysis_expe_2021_06_14\run05_statistics\');
-allExpeStrct(iexpe).CalibFile = ...
-    strcat('E:\manipIFPEN\expe_2021_06_09_calibration\calibrationImages\calib.mat');
-allExpeStrct(iexpe).centerFinding_th = 5; % automatiser la définition de ces paramètres?
-allExpeStrct(iexpe).centerFinding_sz = 2; % automatiser la définition de ces paramètres?
-allExpeStrct(iexpe).maxdist = 3;          % for Benjamin tracks function:
-% max distances between particules from frame to frame
-allExpeStrct(iexpe).longmin = 8;         % for Benjamin tracks function:
-% minimum number of points of a trajectory
 
 iexpe = 6;
 
@@ -100,7 +21,7 @@ allExpeStrct(iexpe).maxdist = 3;          % for Benjamin tracks function:
 % max distances between particules from frame to frame
 allExpeStrct(iexpe).longmin = 8;         % for Benjamin tracks function:
 % minimum number of points of a trajectory
-%%
+
 
 
 
